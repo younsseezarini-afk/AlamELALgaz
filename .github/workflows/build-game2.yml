@@ -1,14 +1,14 @@
-name: Build Game 2 APK
+name: Build KidsPuzzleWorld APK
 
 on:
   workflow_dispatch:
   push:
-    paths:
-      - "KidsPuzzleWorld_FINAL.zip"
-      - ".github/workflows/build-game2.yml"
+    branches:
+      - main
 
 jobs:
   build:
+    name: Build APK
     runs-on: ubuntu-latest
 
     steps:
@@ -16,52 +16,130 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
 
-      - name: Extract project
+      - name: Find project ZIP
+        id: find_zip
+        shell: bash
         run: |
-          mkdir -p project
-          unzip -q KidsPuzzleWorld_FINAL.zip -d project
+          ZIP_FILE=$(find . -maxdepth 3 -type f -name "KidsPuzzleWorld_FINAL.zip" | head -n 1)
 
-          echo "=== Files ==="
-          find project -maxdepth 4 -type f | head -100
-
-      - name: Find Gradle project
-        run: |
-          GRADLEW=$(find project -type f -name gradlew | head -1)
-
-          if [ -z "$GRADLEW" ]; then
-            echo "ERROR: gradlew not found."
-            echo "The ZIP must contain a complete Android Studio project."
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: KidsPuzzleWorld_FINAL.zip not found."
+            echo "Files in repository:"
+            find . -maxdepth 3 -type f | sort
             exit 1
           fi
 
-          PROJECT_DIR=$(dirname "$GRADLEW")
+          echo "ZIP_FILE=$ZIP_FILE" >> "$GITHUB_OUTPUT"
+          echo "Found: $ZIP_FILE"
 
-          echo "Gradle wrapper found:"
-          echo "$GRADLEW"
+      - name: Extract project
+        shell: bash
+        run: |
+          rm -rf extracted
+          mkdir -p extracted
 
-          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          unzip -o "${{ steps.find_zip.outputs.ZIP_FILE }}" -d extracted
+
+          echo "Extracted files:"
+          find extracted -maxdepth 4 -type f | sort
+
+      - name: Find Gradle project
+        id: project
+        shell: bash
+        run: |
+          PROJECT_DIR=$(find extracted -type f -name "settings.gradle.kts" -print -quit)
+
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "ERROR: settings.gradle.kts not found."
+            exit 1
+          fi
+
+          PROJECT_DIR=$(dirname "$PROJECT_DIR")
+
+          echo "PROJECT_DIR=$PROJECT_DIR"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Fix Android Manifest
+        shell: bash
+        run: |
+          PROJECT_DIR="${{ steps.project.outputs.PROJECT_DIR }}"
+          MANIFEST="$PROJECT_DIR/app/src/main/AndroidManifest.xml"
+
+          if [ ! -f "$MANIFEST" ]; then
+            echo "ERROR: AndroidManifest.xml not found."
+            exit 1
+          fi
+
+          echo "Original manifest:"
+          cat "$MANIFEST"
+
+          # Remove old package attribute.
+          sed -i 's/[[:space:]]*package="com.example.kidsgame"//' "$MANIFEST"
+
+          # Remove references to missing launcher icons.
+          sed -i '/android:icon="@mipmap\/ic_launcher"/d' "$MANIFEST"
+          sed -i '/android:roundIcon="@mipmap\/ic_launcher_round"/d' "$MANIFEST"
+
+          echo "Fixed manifest:"
+          cat "$MANIFEST"
 
       - name: Make Gradle executable
+        shell: bash
         run: |
+          PROJECT_DIR="${{ steps.project.outputs.PROJECT_DIR }}"
+
           chmod +x "$PROJECT_DIR/gradlew"
 
+          ls -la "$PROJECT_DIR/gradlew"
+
       - name: Build Debug APK
+        shell: bash
         run: |
+          PROJECT_DIR="${{ steps.project.outputs.PROJECT_DIR }}"
+
           cd "$PROJECT_DIR"
-          ./gradlew assembleDebug --stacktrace
+
+          ./gradlew clean assembleDebug --stacktrace
 
       - name: Find APK
+        id: apk
+        shell: bash
         run: |
-          find "$PROJECT_DIR" -type f -name "*.apk" -print
+          PROJECT_DIR="${{ steps.project.outputs.PROJECT_DIR }}"
+
+          APK=$(find "$PROJECT_DIR/app/build/outputs/apk" \
+            -type f \
+            -name "*.apk" \
+            | head -n 1)
+
+          if [ -z "$APK" ]; then
+            echo "ERROR: APK was not generated."
+            find "$PROJECT_DIR/app/build" -type f | sort
+            exit 1
+          fi
+
+          echo "APK found:"
+          ls -lh "$APK"
+
+          echo "APK=$APK" >> "$GITHUB_OUTPUT"
+
+      - name: Rename APK
+        shell: bash
+        run: |
+          cp "${{ steps.apk.outputs.APK }}" \
+             "KidsPuzzleWorld.apk"
+
+          ls -lh KidsPuzzleWorld.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Game-2-APK
-          path: "**/build/outputs/apk/**/*.apk"
+          name: KidsPuzzleWorld-APK
+          path: KidsPuzzleWorld.apk
           if-no-files-found: error
+          retention-days: 30
