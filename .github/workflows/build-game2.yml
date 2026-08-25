@@ -1,11 +1,11 @@
 name: Build Game 2 APK
 
 on:
-  workflow_dispatch:
   push:
     paths:
       - 'KidsPuzzleWorld.zip'
       - '.github/workflows/build-game2.yml'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,19 +23,40 @@ jobs:
 
       - name: Extract Game 2
         run: |
-          unzip -o KidsPuzzleWorld.zip
-          echo "Game 2 extracted"
-          ls -la KidsPuzzleWorld
+          mkdir -p game2
+          unzip -o KidsPuzzleWorld.zip -d game2
+
+      - name: Find Gradle project
+        run: |
+          echo "Searching for gradlew..."
+          GRADLEW=$(find game2 -type f -name gradlew | head -n 1)
+
+          if [ -z "$GRADLEW" ]; then
+            echo "ERROR: gradlew was not found."
+            echo "The ZIP does not appear to contain a complete Android Studio project."
+            find game2 -maxdepth 3 -type f | head -100
+            exit 1
+          fi
+
+          PROJECT_DIR=$(dirname "$GRADLEW")
+
+          echo "Found Gradle project at:"
+          echo "$PROJECT_DIR"
+
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       - name: Make Gradle executable
-        run: chmod +x KidsPuzzleWorld/gradlew
+        run: |
+          chmod +x "$PROJECT_DIR/gradlew"
 
       - name: Build APK
-        working-directory: KidsPuzzleWorld
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          cd "$PROJECT_DIR"
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KidsPuzzleWorld-APK
-          path: KidsPuzzleWorld/app/build/outputs/apk/debug/*.apk
+          name: Game-2-APK
+          path: |
+            ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
