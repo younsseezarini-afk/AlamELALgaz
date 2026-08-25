@@ -1,0 +1,41 @@
+name: Build Game 2 APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'KidsPuzzleWorld.zip'
+      - '.github/workflows/build-game2.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Extract Game 2
+        run: |
+          unzip -o KidsPuzzleWorld.zip
+          echo "Game 2 extracted"
+          ls -la KidsPuzzleWorld
+
+      - name: Make Gradle executable
+        run: chmod +x KidsPuzzleWorld/gradlew
+
+      - name: Build APK
+        working-directory: KidsPuzzleWorld
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KidsPuzzleWorld-APK
+          path: KidsPuzzleWorld/app/build/outputs/apk/debug/*.apk
