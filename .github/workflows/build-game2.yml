@@ -1,1 +1,67 @@
+name: Build Game 2 APK
 
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "KidsPuzzleWorld_FINAL.zip"
+      - ".github/workflows/build-game2.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Extract project
+        run: |
+          mkdir -p project
+          unzip -q KidsPuzzleWorld_FINAL.zip -d project
+
+          echo "=== Files ==="
+          find project -maxdepth 4 -type f | head -100
+
+      - name: Find Gradle project
+        run: |
+          GRADLEW=$(find project -type f -name gradlew | head -1)
+
+          if [ -z "$GRADLEW" ]; then
+            echo "ERROR: gradlew not found."
+            echo "The ZIP must contain a complete Android Studio project."
+            exit 1
+          fi
+
+          PROJECT_DIR=$(dirname "$GRADLEW")
+
+          echo "Gradle wrapper found:"
+          echo "$GRADLEW"
+
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - name: Make Gradle executable
+        run: |
+          chmod +x "$PROJECT_DIR/gradlew"
+
+      - name: Build Debug APK
+        run: |
+          cd "$PROJECT_DIR"
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Find APK
+        run: |
+          find "$PROJECT_DIR" -type f -name "*.apk" -print
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Game-2-APK
+          path: "**/build/outputs/apk/**/*.apk"
+          if-no-files-found: error
