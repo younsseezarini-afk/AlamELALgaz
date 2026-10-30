@@ -1,4 +1,4 @@
-// Renders reel.html to video frames with headless Chromium.
+// Renders reel.html (or the file named in $REEL) to video frames with headless Chromium.
 //   node render-reel.js stills 0.5,2.0,...   → stills/t_<time>.png for checking
 //   node render-reel.js frames [fps]         → .frames/f00000.jpg … and sfx.json
 //   node render-reel.js video [fps] [sub]    → .seg0.mp4 … with motion blur (sub sub-frames averaged per frame) and .sfx.json
@@ -20,7 +20,7 @@ async function openPage(browser, tmp) {
 
 (async () => {
   const tmp = path.join(dir, '.reel-tmp.html');
-  fs.writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8"></head><body>${fs.readFileSync(path.join(dir, 'reel.html'), 'utf8')}</body></html>`);
+  fs.writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8"></head><body>${fs.readFileSync(path.join(dir, process.env.REEL || 'reel.html'), 'utf8')}</body></html>`);
   const browser = await chromium.launch();
   try {
     if (mode === 'stills') {

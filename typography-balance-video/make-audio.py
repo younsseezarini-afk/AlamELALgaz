@@ -150,10 +150,11 @@ def in_gap(x):
 
 PROG = [[53, 56, 60, 63, 67], [49, 53, 56, 60], [56, 60, 63, 67], [51, 55, 58, 60]]  # Fm9, Dbmaj7, Abmaj7, Eb6
 ROOTS = [41, 37, 44, 39]
-for b in range(20):
+NB = round(DUR / BAR)
+for b in range(NB):
     t0 = b * BAR
     add(pad(PROG[b % 4], BAR + 0.2), t0, 0.15 if b >= 2 else 0.11)
-    drums = 2 <= b <= 18
+    drums = 2 <= b <= NB - 2
     for q in range(4):
         tb = t0 + q * BEAT
         if drums and not in_gap(tb):

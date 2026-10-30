@@ -15,6 +15,8 @@ Words sit on a chrome balance beam. A designer's cursor fixes the tilt one lever
 | `reel.html` | The animation source. Every frame is computed from the timeline by `renderAt(t)`; open it in a browser to watch it live |
 | `assets/cut/` | Transparent cut-outs of the chrome objects, used as 3D stickers |
 | `render-reel.js`, `make-audio.py` | Rebuild the reel (commands below) |
+| `typography-motion.mp4` | Second video: 32 s motion graphics built from the “FINAL — Younsse Ezarini — Typography” Canva carousel, in the reference style |
+| `typography-reel.html`, `assets/typo/` | Its animation source, the five carousel pages and transparent cut-outs of their 3D objects. Rebuild with `REEL=typography-reel.html node render-reel.js video 30 4`, then the same audio and ffmpeg steps |
 
 ## Rebuild the reel
 
