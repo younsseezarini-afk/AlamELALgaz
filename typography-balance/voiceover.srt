@@ -1,0 +1,31 @@
+1
+00:00:00,300 --> 00:00:02,800
+What if you could just… generate balance?
+
+2
+00:00:03,100 --> 00:00:06,700
+You can't. Most layouts don't fail on fonts. They fail on balance.
+
+3
+00:00:07,100 --> 00:00:10,300
+Every word has visual weight, and size is the heaviest.
+
+4
+00:00:10,700 --> 00:00:13,800
+But a small, bold word can balance a big, light one.
+
+5
+00:00:14,500 --> 00:00:17,500
+Space has weight too. Let your text breathe.
+
+6
+00:00:18,200 --> 00:00:21,400
+Then lock everything to one invisible grid.
+
+7
+00:00:22,100 --> 00:00:25,800
+Scale. Weight. Space. Grid. That's typographic balance.
+
+8
+00:00:26,600 --> 00:00:28,800
+Save this for your next layout.

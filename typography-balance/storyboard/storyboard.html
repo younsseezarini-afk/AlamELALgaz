@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weight — Storyboard</title>
+<style>
+  :root { --ink:#100C26; --violet:#5B3BE8; --deep:#3A25B8; --lilac:#B48CF2; --mist:#F2EDFF; --grey:#8E89A3; --line:#E6E1F5; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fff; color: var(--ink); font-family: Inter, system-ui, sans-serif; }
+  .wrap { width: 2160px; padding: 96px 96px 120px; background:
+    radial-gradient(900px 600px at 85% 0%, rgba(180,140,242,.22), transparent 70%),
+    radial-gradient(800px 600px at 0% 100%, rgba(91,59,232,.08), transparent 70%); }
+  header { display: flex; justify-content: space-between; align-items: end; margin-bottom: 64px; }
+  .kicker { font-size: 26px; letter-spacing: 8px; font-weight: 600; color: var(--violet); }
+  h1 { font-family: "Inter Display", Inter, sans-serif; font-size: 120px; line-height: .95; margin: 16px 0 0; font-weight: 800; letter-spacing: -2px; }
+  h1 span { font-weight: 200; background: linear-gradient(90deg, var(--deep), var(--violet), var(--lilac)); -webkit-background-clip: text; color: transparent; }
+  .meta { text-align: right; font-size: 26px; color: var(--grey); line-height: 1.6; }
+  .meta b { color: var(--ink); font-weight: 600; }
+  .swatches { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+  .swatches i { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--line); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; }
+  .card { background: #fff; border: 2px solid var(--line); border-radius: 36px; padding: 18px; box-shadow: 0 20px 60px rgba(58,37,184,.08); }
+  .card img { width: 100%; aspect-ratio: 9/16; display: block; border-radius: 24px; border: 1px solid var(--line); }
+  .row { display: flex; justify-content: space-between; align-items: center; margin: 22px 8px 10px; }
+  .no { font-size: 22px; font-weight: 700; color: #fff; background: var(--violet); padding: 6px 16px; border-radius: 99px; }
+  .no.tr { background: var(--mist); color: var(--violet); }
+  .tc { font-size: 22px; color: var(--grey); font-variant-numeric: tabular-nums; font-weight: 500; }
+  h3 { font-size: 34px; margin: 6px 8px 8px; font-weight: 700; letter-spacing: -.3px; }
+  p { margin: 0 8px 10px; font-size: 22px; line-height: 1.45; color: #4A4560; }
+  .vo { margin: 14px 8px 8px; padding: 14px 18px; background: var(--mist); border-radius: 18px; font-size: 22px; line-height: 1.4; color: var(--deep); font-weight: 500; }
+  .vo:before { content: "VO  "; font-weight: 800; letter-spacing: 1px; color: var(--violet); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="kicker">STORYBOARD · 9:16 · 30s</div>
+      <h1>Weight. <span>The Art of Typographic Balance</span></h1>
+    </div>
+    <div class="meta">
+      <b>Motif:</b> a balance beam that reacts to every word<br>
+      <b>Type:</b> Inter Display 100–900 · <b>Ground:</b> white<br>
+      <div class="swatches"><i style="background:#fff"></i><i style="background:#F2EDFF"></i><i style="background:#B48CF2"></i><i style="background:#5B3BE8"></i><i style="background:#3A25B8"></i><i style="background:#100C26"></i></div>
+    </div>
+  </header>
+  <div class="grid" id="g"></div>
+</div>
+<script>
+const F = [
+  ['01', '0:00–0:03', 'Hook · The prompt', 't1.70', 'A glowing AI prompt pill types “make my type feel balanced”. The cursor glides in and taps Generate.', 'What if you could just… generate balance?'],
+  ['→', '0:02.6', 'Transition · Explode', 't2.90', 'The request bursts into loose letters in mixed weights. They fly out and become the chaos of the next scene.', null, true],
+  ['02', '0:03–0:07', 'Imbalance', 't5.60', 'Scattered words in clashing sizes. HEAVY drops onto the beam, which tips to −14°. The readout chip says Off-balance.', 'You can’t. Most layouts don’t fail on fonts. They fail on balance.'],
+  ['→', '0:06.6', 'Transition · Slide off', 't7.00', 'HEAVY slides off the tilted beam and falls out of frame. The beam springs back to level, ready for the next lesson.', null, true],
+  ['03', '0:07–0:10.5', 'Scale', 't9.20', 'An “Aa” type ladder pops up along a dashed baseline (×1.618). “Size” lands on the right and the beam tips to +9°.', 'Every word has visual weight, and size is the heaviest.'],
+  ['04', '0:10.5–0:14', 'Weight', 't13.00', 'A big thin “Calm” against a small “BOLD”. Its wght chip counts from 100 to 900 and the beam levels out live. Balanced.', 'But a small, bold word can balance a big, light one.'],
+  ['→', '0:14', 'Transition · Violet sweep', 't14.15', 'A violet panel wipes across the frame carrying “Space”. Its letter spacing opens up as it passes.', null, true],
+  ['05', '0:14–0:18', 'Space', 't16.90', '“breathe” tracks open. On a poster card, the padding and gaps turn into violet blocks with px chips as the cramped layout relaxes.', 'Space has weight too. Let your text breathe.'],
+  ['06', '0:18–0:20', 'Grid · Chaos', 't19.00', 'Four violet columns draw down the frame. Tilted words wobble out of place.', 'Then lock everything…'],
+  ['06', '0:20–0:22', 'Grid · Snap', 't20.90', 'Each word snaps to the left margin with a click flash, and the shared edge lights up.', '…to one invisible grid.'],
+  ['07', '0:22–0:26', 'Resolution', 't24.90', 'The title reveals through a mask. Four check pills pop in on the beat. A heavy small Aa and a light big Aa sit on the beam, perfectly level.', 'Scale. Weight. Space. Grid. That’s typographic balance.'],
+  ['08', '0:26–0:30', 'Outro · Bookend', 't28.60', 'Everything collapses into a prompt pill again: “Save this for your next layout”. The cursor taps bookmark, a Saved toast pops and the CTA fades in. It loops back to the start.', 'Save this for your next layout.']
+];
+document.getElementById('g').innerHTML = F.map(([n, tc, h, img, d, vo, tr]) => `
+  <div class="card"><img src="frames/${img}.jpg">
+  <div class="row"><span class="no ${tr ? 'tr' : ''}">${n}</span><span class="tc">${tc}</span></div>
+  <h3>${h}</h3><p>${d}</p>${vo ? `<div class="vo">${vo}</div>` : ''}</div>`).join('');
+</script>
+</body>
+</html>

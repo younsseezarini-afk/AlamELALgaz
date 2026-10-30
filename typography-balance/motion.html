@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typographic Balance — Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #F4F1FB; }
+  body { display: grid; place-items: center; }
+  canvas { height: 100vh; max-width: 100vw; aspect-ratio: 9 / 16; background: #fff; box-shadow: 0 30px 80px rgba(58, 37, 184, .12); }
+  body.capture canvas { height: auto; width: 1080px; box-shadow: none; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+/*
+ * "Weight" — The Art of Typographic Balance
+ * 9:16 kinetic typography reel, 30s @ 30fps. Deterministic: renderAt(t) draws any frame.
+ * Open normally to preview (click to pause), or with ?capture to drive it frame by frame.
+ */
+const W = 1080, H = 1920, FPS = 30, DUR = 30;
+const C = {
+  bg: '#FFFFFF', ink: '#100C26', violet: '#5B3BE8', deep: '#3A25B8',
+  lilac: '#B48CF2', mist: '#F2EDFF', grey: '#8E89A3', line: '#E6E1F5', bar: '#E9E5F3'
+};
+const DISP = '"Inter Display", Inter';
+const TEXT = 'Inter';
+const CTA = 'Follow for more design craft';
+
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+
+// ---------- math & easing ----------
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, p) => a + (b - a) * p;
+const P = (t, a, b) => clamp((t - a) / (b - a));
+const rnd = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const E = {
+  lin: p => p,
+  out3: p => 1 - Math.pow(1 - p, 3),
+  in3: p => p * p * p,
+  outExpo: p => p >= 1 ? 1 : 1 - Math.pow(2, -10 * p),
+  inOut: p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2,
+  back: p => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); },
+  spring: p => p >= 1 ? 1 : 1 - Math.exp(-5.5 * p) * Math.cos(10 * p)
+};
+
+// ---------- drawing helpers ----------
+function font(size, weight = 400, italic = false, fam = DISP) {
+  ctx.font = `${italic ? 'italic ' : ''}${weight} ${size}px ${fam}, sans-serif`;
+}
+function measure(s, size, weight = 400, ls = 0, italic = false, fam = DISP) {
+  ctx.save(); font(size, weight, italic, fam); ctx.letterSpacing = ls + 'px';
+  const w = ctx.measureText(s).width; ctx.restore(); return w;
+}
+// o: size, weight, color, align, base, alpha, ls, italic, rot, scale, blur, fam, grad
+function txt(s, x, y, o = {}) {
+  const a = o.alpha ?? 1; if (a <= 0.001) return;
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(x, y);
+  if (o.rot) ctx.rotate(o.rot);
+  if (o.scale != null) ctx.scale(o.scale, o.scale);
+  if (o.blur > 0.2) ctx.filter = `blur(${o.blur}px)`;
+  font(o.size || 60, o.weight || 400, o.italic, o.fam || DISP);
+  ctx.letterSpacing = (o.ls || 0) + 'px';
+  ctx.textAlign = o.align || 'center';
+  ctx.textBaseline = o.base || 'alphabetic';
+  if (o.grad) {
+    const w = ctx.measureText(s).width;
+    const x0 = ctx.textAlign === 'center' ? -w / 2 : 0;
+    const g = ctx.createLinearGradient(x0, 0, x0 + w, 0);
+    g.addColorStop(0, C.deep); g.addColorStop(.55, C.violet); g.addColorStop(1, C.lilac);
+    ctx.fillStyle = g;
+  } else ctx.fillStyle = o.color || C.ink;
+  ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+// Mixed-style line: parts = [{s, w, c, i}]
+function rich(parts, x, y, size, o = {}) {
+  const fam = o.fam || DISP;
+  const ws = parts.map(p => measure(p.s, size, p.w || 400, 0, p.i, fam));
+  const total = ws.reduce((a, b) => a + b, 0);
+  let cx = x - total / 2;
+  parts.forEach((p, i) => {
+    txt(p.s, cx, y, { size, weight: p.w || 400, italic: p.i, color: p.c || C.ink, align: 'left', alpha: o.alpha, blur: o.blur, fam });
+    cx += ws[i];
+  });
+}
+// Line reveal through a mask
+function reveal(s, x, y, o, p) {
+  if (p <= 0) return;
+  const size = o.size || 60;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, y - size * 1.05, W, size * 1.4); ctx.clip();
+  txt(s, x, y + (1 - p) * size * 1.25, o);
+  ctx.restore();
+}
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function blob(x, y, r, col) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, col); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
+}
+function sparkle(x, y, r, col) {
+  ctx.save(); ctx.translate(x, y); ctx.fillStyle = col; ctx.beginPath();
+  for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2;
+    ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    ctx.lineTo(Math.cos(a + Math.PI / 4) * r * .28, Math.sin(a + Math.PI / 4) * r * .28);
+  }
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function cursor(x, y, alpha, s = 1) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.scale(1.7 * s, 1.7 * s);
+  ctx.shadowColor = 'rgba(16,12,38,.25)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
+  ctx.beginPath();
+  ctx.moveTo(0, 0); ctx.lineTo(0, 30); ctx.lineTo(8, 23); ctx.lineTo(13, 34); ctx.lineTo(18, 32);
+  ctx.lineTo(13, 21); ctx.lineTo(23, 21); ctx.closePath();
+  ctx.fillStyle = C.ink; ctx.fill();
+  ctx.shadowColor = 'transparent'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+  ctx.restore();
+}
+function ring(x, y, p, r0 = 40, r1 = 220) {
+  if (p <= 0 || p >= 1) return;
+  ctx.save(); ctx.globalAlpha = 1 - p; ctx.strokeStyle = C.violet; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(x, y, lerp(r0, r1, E.out3(p)), 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+}
+function check(x, y, r, fill = C.violet) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = fill; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = r * .2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(-r * .4, 0); ctx.lineTo(-r * .1, r * .32); ctx.lineTo(r * .45, -r * .3); ctx.stroke();
+  ctx.restore();
+}
+
+// ---------- background ----------
+const dots = document.createElement('canvas'); dots.width = W; dots.height = H;
+(() => {
+  const d = dots.getContext('2d'); d.fillStyle = 'rgba(91,59,232,0.09)';
+  for (let y = 30; y < H; y += 60) for (let x = 30; x < W; x += 60) { d.beginPath(); d.arc(x, y, 1.6, 0, Math.PI * 2); d.fill(); }
+})();
+function bg(t) {
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  blob(560 + Math.sin(t * .4) * 180, 760 + Math.cos(t * .3) * 140, 760, 'rgba(180,140,242,0.20)');
+  blob(260 + Math.cos(t * .35) * 120, 1560 + Math.sin(t * .5) * 100, 620, 'rgba(91,59,232,0.09)');
+  blob(900 + Math.sin(t * .28) * 80, 260, 420, 'rgba(180,140,242,0.12)');
+  ctx.drawImage(dots, 0, 0);
+}
+
+// ---------- the balance beam: the through-line of the whole film ----------
+const BEAM = { cx: 540, cy: 1480, len: 860 };
+const KF = [
+  { t: 0, a: 0 },
+  { t: 4.72, a: -14, d: 1.2, e: 'spring' },  // HEAVY lands
+  { t: 6.7, a: 0, d: .7, e: 'spring' },     // HEAVY slides off
+  { t: 7.95, a: 9, d: 1.1, e: 'spring' },   // Size lands
+  { t: 10.45, a: -12, d: 1.0, e: 'spring' }, // Calm takes the left
+  { t: 11.8, a: 0, d: 1.9, e: 'inOut' }      // BOLD gains weight -> level
+];
+function beamDeg(t) {
+  let v = KF[0].a;
+  for (let i = 1; i < KF.length; i++) {
+    const k = KF[i]; if (t < k.t) break;
+    v = lerp(v, k.a, E[k.e](P(t, k.t, k.t + k.d)));
+  }
+  if (t < 11.8) v += Math.sin(t * 2.1) * .35 * P(t, 3, 4);
+  if (t > 13.7) v += 1.1 * Math.exp(-4 * (t - 13.7)) * Math.sin(10 * (t - 13.7));
+  return v;
+}
+const beamRad = t => beamDeg(t) * Math.PI / 180;
+function beamAlpha(t) {
+  return P(t, 3.0, 3.5) * (1 - P(t, 17.5, 18.0)) + P(t, 22.2, 22.8) * (1 - P(t, 25.9, 26.4));
+}
+function onBeam(d, t) {
+  const a = beamRad(t);
+  return { x: BEAM.cx + d * Math.cos(a), y: BEAM.cy + d * Math.sin(a), a };
+}
+// Word resting on the beam at offset d, optionally lifted (falling in) by `lift` px
+function wordOnBeam(s, d, t, o = {}, lift = 0) {
+  const p = onBeam(d, t);
+  txt(s, p.x, p.y - 10 - lift, Object.assign({}, o, { rot: p.a * (lift > 0 ? clamp(1 - lift / 600) : 1) }));
+  return p;
+}
+function drawBeam(t) {
+  const al = beamAlpha(t); if (al <= 0) return;
+  const deg = beamDeg(t), a = deg * Math.PI / 180;
+  const level = Math.abs(deg) < .35 && t > 13.5;
+  ctx.save(); ctx.globalAlpha = al; ctx.translate(BEAM.cx, BEAM.cy);
+  // fulcrum
+  ctx.fillStyle = C.ink;
+  ctx.beginPath(); ctx.moveTo(0, 6); ctx.lineTo(-38, 72); ctx.lineTo(38, 72); ctx.closePath(); ctx.fill();
+  ctx.fillRect(-90, 72, 180, 4);
+  // beam
+  ctx.save(); ctx.rotate(a);
+  if (level) { ctx.shadowColor = 'rgba(91,59,232,.55)'; ctx.shadowBlur = 30; }
+  ctx.strokeStyle = level ? C.violet : C.ink; ctx.lineWidth = 7; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-BEAM.len / 2, 0); ctx.lineTo(BEAM.len / 2, 0); ctx.stroke();
+  ctx.shadowColor = 'transparent';
+  ctx.fillStyle = level ? C.violet : C.ink;
+  [-1, 1].forEach(s => { ctx.beginPath(); ctx.arc(s * BEAM.len / 2, 0, 9, 0, Math.PI * 2); ctx.fill(); });
+  ctx.restore();
+  // readout chip
+  const label = level ? 'Balanced' : 'Off-balance';
+  const val = (deg < 0 ? '−' : '+') + Math.abs(deg).toFixed(1) + '°';
+  const chipW = 330, cy = 140;
+  ctx.fillStyle = level ? C.violet : '#fff';
+  ctx.shadowColor = 'rgba(58,37,184,.14)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8;
+  rr(-chipW / 2, cy - 32, chipW, 64, 32); ctx.fill();
+  ctx.shadowColor = 'transparent';
+  if (!level) { ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.stroke(); }
+  font(28, 600, false, TEXT); ctx.letterSpacing = '0px'; ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left'; ctx.fillStyle = level ? '#fff' : C.ink; ctx.fillText(level ? '0.0°' : val, -chipW / 2 + 30, cy + 1);
+  ctx.textAlign = 'right'; ctx.fillStyle = level ? 'rgba(255,255,255,.85)' : C.grey; ctx.fillText(label, chipW / 2 - 30, cy + 1);
+  ctx.restore();
+  // level burst
+  ring(BEAM.cx, BEAM.cy + 140, P(t, 13.65, 14.3), 60, 260);
+}
+
+// ---------- chrome: chapter tag + progress ----------
+const CHAPTERS = [
+  { n: '01', l: 'Imbalance', a: 3.1, b: 6.9 },
+  { n: '02', l: 'Scale', a: 7.1, b: 10.3 },
+  { n: '03', l: 'Weight', a: 10.6, b: 13.85 },
+  { n: '04', l: 'Space', a: 14.5, b: 17.5 },
+  { n: '05', l: 'Grid', a: 18.1, b: 21.4 }
+];
+function chrome(t) {
+  CHAPTERS.forEach((c, i) => {
+    const p = E.outExpo(P(t, c.a, c.a + .5)), q = E.in3(P(t, c.b, c.b + .35));
+    if (p <= 0 || q >= 1) return;
+    ctx.save(); ctx.globalAlpha = p * (1 - q); ctx.translate(80 - (1 - p) * 30, 150);
+    const lw = measure(c.l, 28, 500, 0, false, TEXT), w = 100 + lw;
+    ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(58,37,184,.10)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 6;
+    rr(0, -32, w, 64, 32); ctx.fill(); ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.stroke();
+    font(26, 700, false, TEXT); ctx.letterSpacing = '0px'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.fillStyle = C.violet; ctx.fillText(c.n, 28, 1);
+    font(28, 500, false, TEXT); ctx.fillStyle = C.ink; ctx.fillText(c.l, 72, 1);
+    ctx.restore();
+  });
+  // progress segments
+  const pa = P(t, 3.1, 3.6) * (1 - P(t, 21.4, 21.8));
+  if (pa > 0) {
+    ctx.save(); ctx.globalAlpha = pa;
+    const idx = CHAPTERS.findIndex(c => t < c.b + .35);
+    for (let i = 0; i < 5; i++) {
+      const x = 1000 - (4 - i) * 46 - 36;
+      const active = i === idx, done = i < idx;
+      ctx.fillStyle = active || done ? C.violet : C.line;
+      ctx.globalAlpha = pa * (done ? .45 : 1);
+      rr(x, 146, 36, 8, 4); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+// ---------- S1 · Hook: "generate balance" ----------
+const S1 = { text: 'make my type feel balanced', cx: 540, cy: 920, pw: 920, ph: 150 };
+function s1(t) {
+  if (t > 3.6) return;
+  const { cx, cy, pw, ph, text } = S1;
+  const pin = E.outExpo(P(t, 0.05, 0.9)), pout = E.in3(P(t, 2.6, 3.0));
+  const typed = Math.floor(text.length * P(t, 0.75, 1.95));
+  const tx = -pw / 2 + 115;
+  const btn = { x: cx + pw / 2 - 105, y: cy };
+  if (pout < 1) {
+    ctx.save(); ctx.globalAlpha = pin * (1 - pout); ctx.translate(cx, cy);
+    const sc = lerp(.85, 1, pin) * lerp(1, .92, pout); ctx.scale(sc, sc);
+    if (pin < 1) ctx.filter = `blur(${(1 - pin) * 16}px)`;
+    ctx.shadowColor = 'rgba(91,59,232,0.28)'; ctx.shadowBlur = 90; ctx.shadowOffsetY = 24;
+    ctx.fillStyle = '#fff'; rr(-pw / 2, -ph / 2, pw, ph, ph / 2); ctx.fill();
+    ctx.shadowColor = 'transparent';
+    const g = ctx.createLinearGradient(-pw / 2, 0, pw / 2, 0);
+    g.addColorStop(0, C.lilac); g.addColorStop(1, C.violet);
+    ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.stroke();
+    sparkle(-pw / 2 + 68, 0, 24, C.violet);
+    font(44, 500, false, TEXT); ctx.letterSpacing = '0px'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    if (t < 2.6) {
+      const s = text.slice(0, typed);
+      ctx.fillStyle = C.ink; ctx.fillText(s, tx, 2);
+      if (typed === 0) { ctx.fillStyle = C.grey; ctx.fillText('Ask anything…', tx, 2); }
+      const cw = typed ? ctx.measureText(s).width : 0;
+      if (typed < text.length || Math.floor(t * 2.4) % 2 === 0) { ctx.fillStyle = C.violet; ctx.fillRect(tx + cw + 6, -28, 4, 56); }
+    }
+    const press = (t > 2.42 && t < 2.68) ? 1 - .08 * Math.sin(P(t, 2.42, 2.68) * Math.PI) : 1;
+    ctx.save(); ctx.translate(pw / 2 - 105, 0); ctx.scale(press, press);
+    const bg2 = ctx.createLinearGradient(-85, 0, 85, 0); bg2.addColorStop(0, C.violet); bg2.addColorStop(1, C.deep);
+    ctx.fillStyle = bg2; rr(-85, -48, 170, 96, 48); ctx.fill();
+    font(30, 600, false, TEXT); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText('Generate', 0, 2);
+    ctx.restore();
+    ctx.restore();
+  }
+  ring(btn.x, btn.y, P(t, 2.5, 3.1));
+  // the request explodes into loose letters (they become the chaos of S2)
+  if (t >= 2.6) {
+    const p = P(t, 2.6, 3.5), e = E.out3(p);
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i]; if (ch === ' ') continue;
+      const sx = cx + tx + measure(text.slice(0, i), 44, 500, 0, false, TEXT) + measure(ch, 44, 500, 0, false, TEXT) / 2;
+      const r1 = rnd(i), r2 = rnd(i + 50);
+      txt(ch, sx + (r1 - .5) * 1000 * e, cy + 14 - (r2 - .35) * 1100 * e + 400 * p * p, {
+        size: 44 * (1 + e * r2 * 2.4), weight: [100, 400, 900][i % 3], rot: (r1 - .5) * 4 * e,
+        alpha: 1 - E.in3(p), color: i % 4 ? C.ink : C.violet, fam: TEXT
+      });
+    }
+  }
+  // cursor
+  const pm = E.inOut(P(t, 1.8, 2.4));
+  const press = (t > 2.42 && t < 2.68) ? .9 : 1;
+  cursor(lerp(960, btn.x + 10, pm), lerp(1420, btn.y + 14, pm), P(t, 1.7, 1.9) * (1 - P(t, 2.75, 2.95)), press);
+}
+
+// ---------- S2 · Imbalance ----------
+const S2W = [
+  { s: 'why', x: 250, y: 430, size: 58, w: 300, r: -.12 },
+  { s: 'does', x: 770, y: 540, size: 118, w: 800, r: .08 },
+  { s: 'my', x: 420, y: 690, size: 44, w: 500, r: .22 },
+  { s: 'layout', x: 610, y: 860, size: 160, w: 100, r: -.05 },
+  { s: 'feel', x: 230, y: 1030, size: 78, w: 900, r: .1 },
+  { s: 'off?', x: 820, y: 1120, size: 50, w: 400, r: -.2, c: C.violet }
+];
+function s2(t) {
+  if (t < 2.9 || t > 7.6) return;
+  S2W.forEach((w, i) => {
+    const a = 2.95 + i * .1;
+    const pin = E.outExpo(P(t, a, a + .7)), pout = E.in3(P(t, 6.45 + i * .04, 7.05 + i * .04));
+    const dr = Math.sin(t * 1.3 + i * 2) * 7;
+    txt(w.s, w.x + dr, w.y + (1 - pin) * 90 - pout * 180, {
+      size: w.size, weight: w.w, rot: w.r + (1 - pin) * .35 * (i % 2 ? 1 : -1) + Math.sin(t + i) * .015,
+      color: w.c || C.ink, alpha: pin * (1 - pout), blur: (1 - pin) * 14 + pout * 12
+    });
+  });
+  // HEAVY drops onto the left of the beam, then slides off
+  if (t > 4.2) {
+    const dp = P(t, 4.2, 4.72);
+    const sl = E.in3(P(t, 6.5, 7.15));
+    const lift = (1 - dp * dp) * 1100;
+    const d = -140 - sl * 760;
+    const squash = t > 4.72 ? 1 + .08 * Math.exp(-8 * (t - 4.72)) * Math.sin(16 * (t - 4.72)) : 1;
+    const p = onBeam(d, t);
+    ctx.save(); ctx.translate(p.x, p.y - 10 - lift + sl * sl * 500); ctx.rotate(p.a - sl * .5); ctx.scale(1 / squash, squash);
+    txt('HEAVY', 0, 0, { size: 150, weight: 900, alpha: P(t, 4.2, 4.3) * (1 - P(t, 7.0, 7.2)) });
+    ctx.restore();
+    // impact dust
+    const ip = P(t, 4.72, 5.3);
+    if (ip > 0 && ip < 1) {
+      for (let k = 0; k < 7; k++) {
+        const q = onBeam(-140 + (k - 3) * 80, t);
+        ctx.save(); ctx.globalAlpha = (1 - ip) * .6; ctx.fillStyle = C.lilac;
+        ctx.beginPath(); ctx.arc(q.x + (k - 3) * 40 * ip, q.y - 30 - 70 * E.out3(ip) * (1 - Math.abs(k - 3) / 4), 7 * (1 - ip) + 2, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+  // headline statement
+  const sp = E.outExpo(P(t, 5.2, 5.9)), so = E.in3(P(t, 6.4, 6.9));
+  rich([{ s: 'It’s not the font. ', w: 400, c: C.grey }, { s: 'It’s the balance.', w: 700 }], 540, 1290 - (1 - sp) * 30, 44, { alpha: sp * (1 - so) });
+}
+
+// ---------- S3 · Scale ----------
+const S3SIZES = [60, 97, 157, 254];
+function s3(t) {
+  if (t < 6.9 || t > 11) return;
+  const ws = S3SIZES.map(s => measure('Aa', s, 700));
+  const gap = 40, total = ws.reduce((a, b) => a + b, 0) + gap * 3;
+  let x = (W - total) / 2;
+  const base = 900;
+  // baseline guide
+  const gp = E.inOut(P(t, 7.05, 7.6)) * (1 - P(t, 10.1, 10.5));
+  if (gp > 0) {
+    ctx.save(); ctx.strokeStyle = C.violet; ctx.globalAlpha = .45 * gp; ctx.setLineDash([10, 10]); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x - 40, base + 2); ctx.lineTo(x - 40 + (total + 80) * gp, base + 2); ctx.stroke(); ctx.restore();
+  }
+  S3SIZES.forEach((s, i) => {
+    const a = 7.15 + i * .14;
+    const pin = clamp(E.back(P(t, a, a + .6)), 0, 2), pout = E.in3(P(t, 10.15 + i * .05, 10.65 + i * .05));
+    const cx = x + ws[i] / 2;
+    txt('Aa', cx, base - pout * 220, { size: s, weight: 700, scale: pin, alpha: P(t, a, a + .1) * (1 - pout), color: i === 3 ? C.violet : C.ink });
+    txt(s + 'px', cx, base + 56 - pout * 220, { size: 24, weight: 500, color: C.grey, fam: TEXT, alpha: P(t, a + .3, a + .6) * (1 - pout) });
+    x += ws[i] + gap;
+  });
+  // ratio chip
+  const cp = E.back(P(t, 7.85, 8.35)), co = P(t, 10.1, 10.4);
+  if (cp > 0 && co < 1) {
+    ctx.save(); ctx.globalAlpha = clamp(cp) * (1 - co); ctx.translate(540, 520); ctx.scale(cp, cp);
+    ctx.fillStyle = C.mist; rr(-150, -36, 300, 72, 36); ctx.fill();
+    font(30, 600, false, TEXT); ctx.letterSpacing = '0px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = C.violet; ctx.fillText('Scale ×1.618', 0, 2); ctx.restore();
+  }
+  // beam: small vs Size
+  const sp = P(t, 7.3, 7.7), out = P(t, 10.2, 10.55);
+  wordOnBeam('small', -280, t, { size: 56, weight: 400, alpha: sp * (1 - out), blur: out * 10 });
+  if (t > 7.45) {
+    const dp = P(t, 7.45, 7.95);
+    wordOnBeam('Size', 200, t, { size: 230, weight: 800, alpha: P(t, 7.45, 7.55) * (1 - out), blur: out * 18 }, (1 - dp * dp) * 1000);
+  }
+  const st = E.outExpo(P(t, 8.5, 9.2)), so = P(t, 10.1, 10.4);
+  rich([{ s: 'Size is the ', w: 400, c: C.grey }, { s: 'heaviest', w: 800, c: C.violet }, { s: ' signal.', w: 400, c: C.grey }], 540, 1130 - (1 - st) * 30, 46, { alpha: st * (1 - so) });
+}
+
+// ---------- S4 · Weight ----------
+function s4(t) {
+  if (t < 10.3 || t > 14.32) return;
+  const pin = E.outExpo(P(t, 10.35, 10.95));
+  wordOnBeam('Calm', -225, t, { size: 210, weight: 100, alpha: pin, blur: (1 - pin) * 16 }, (1 - pin) * 140);
+  const wp = E.inOut(P(t, 11.8, 13.6));
+  const wv = Math.round((100 + 800 * wp) / 100) * 100;
+  const bin = E.outExpo(P(t, 10.6, 11.2));
+  const bp = wordOnBeam('BOLD', 260, t, { size: 120, weight: wv, alpha: bin, blur: (1 - bin) * 12 }, (1 - bin) * 140);
+  // weight chip floating above BOLD
+  const cp = clamp(E.back(P(t, 11.4, 11.9)), 0, 1.2);
+  if (cp > 0) {
+    ctx.save(); ctx.translate(bp.x, bp.y - 230); ctx.scale(cp, cp);
+    ctx.fillStyle = C.violet; ctx.shadowColor = 'rgba(91,59,232,.35)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8;
+    rr(-110, -34, 220, 68, 34); ctx.fill(); ctx.shadowColor = 'transparent';
+    ctx.beginPath(); ctx.moveTo(-12, 33); ctx.lineTo(0, 47); ctx.lineTo(12, 33); ctx.fill();
+    font(28, 600, false, TEXT); ctx.letterSpacing = '0px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff'; ctx.fillText('wght  ' + wv, 0, 2);
+    ctx.restore();
+  }
+  const st = E.outExpo(P(t, 10.9, 11.6));
+  rich([{ s: 'A small, ', w: 400, c: C.grey }, { s: 'bold', w: 900 }, { s: ' word', w: 400, c: C.grey }], 540, 720 - (1 - st) * 30, 56, { alpha: st });
+  const st2 = E.outExpo(P(t, 11.15, 11.85));
+  rich([{ s: 'balances a big, ', w: 400, c: C.grey }, { s: 'light', w: 100 }, { s: ' one.', w: 400, c: C.grey }], 540, 800 - (1 - st2) * 30, 56, { alpha: st2 });
+}
+
+// ---------- Transition · violet sweep ----------
+function sweep(t) {
+  if (t < 13.9 || t > 14.8) return;
+  const a = E.inOut(P(t, 13.9, 14.3)), b = E.inOut(P(t, 14.35, 14.78));
+  const l = W * (1 - a), r = W * (1 - b);
+  if (r <= l) return;
+  ctx.save();
+  const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, C.violet); g.addColorStop(1, C.deep);
+  ctx.fillStyle = g; ctx.fillRect(l, 0, r - l, H);
+  ctx.beginPath(); ctx.rect(l, 0, r - l, H); ctx.clip();
+  txt('Space', 540 + (1 - a) * 200 - b * 200, 1010, { size: 230, weight: 800, color: '#fff', ls: lerp(-10, 30, (a + b) / 2) });
+  ctx.restore();
+}
+
+// ---------- S5 · Space ----------
+function s5(t) {
+  if (t < 14.3 || t > 18.2) return;
+  const out = E.in3(P(t, 17.5, 18.1));
+  ctx.save(); ctx.globalAlpha = 1 - out; ctx.translate(0, -out * 120);
+  const lp = E.outExpo(P(t, 14.9, 16.2));
+  txt('breathe', 540, 560, { size: 140, weight: 700, ls: lerp(-24, 26, lp) });
+  // card
+  const cin = E.outExpo(P(t, 14.5, 15.1));
+  const cx = 170, cw = 740, ch = 560, cy = 700 + (1 - cin) * 80;
+  const sp = E.outExpo(P(t, 15.6, 16.8));
+  const pad = lerp(18, 72, sp), gap = lerp(6, 56, sp);
+  ctx.save(); ctx.globalAlpha *= cin;
+  ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(58,37,184,.16)'; ctx.shadowBlur = 60; ctx.shadowOffsetY = 20;
+  rr(cx, cy, cw, ch, 40); ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.stroke();
+  ctx.save(); rr(cx, cy, cw, ch, 40); ctx.clip();
+  // space made visible
+  const sa = P(t, 15.4, 15.8) * .9;
+  ctx.fillStyle = `rgba(91,59,232,${.12 * sa})`;
+  ctx.fillRect(cx, cy, cw, pad); ctx.fillRect(cx, cy + pad, pad, ch - pad);
+  ctx.fillRect(cx + cw - pad, cy + pad, pad, ch - pad);
+  const hy1 = cy + pad + 30 + 84, hy2 = hy1 + 92;
+  const gy = hy2 + 22;
+  ctx.fillStyle = `rgba(91,59,232,${.18 * sa})`; ctx.fillRect(cx + pad, gy, cw - 2 * pad, gap);
+  txt('ISSUE 07', cx + pad, cy + pad + 26, { size: 22, weight: 600, ls: 4, color: C.grey, align: 'left', fam: TEXT });
+  txt('Room to', cx + pad, hy1, { size: 92, weight: 800, align: 'left' });
+  txt('think.', cx + pad, hy2, { size: 92, weight: 200, align: 'left', color: C.violet });
+  [1, .92, .58].forEach((f, i) => {
+    ctx.fillStyle = C.bar; rr(cx + pad, gy + gap + 10 + i * 34, (cw - 2 * pad) * f, 14, 7); ctx.fill();
+  });
+  ctx.restore();
+  // dimension chips
+  if (sa > 0) {
+    const chip = (label, x, y) => {
+      ctx.save(); ctx.globalAlpha *= sa / .9; ctx.fillStyle = C.violet; rr(x - 42, y - 20, 84, 40, 20); ctx.fill();
+      font(22, 600, false, TEXT); ctx.letterSpacing = '0px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff'; ctx.fillText(label, x, y + 1); ctx.restore();
+    };
+    chip(Math.round(pad) + '', cx + cw / 2, cy + pad / 2);
+    chip(Math.round(pad) + '', cx + pad / 2 + (pad < 60 ? 30 : 0), cy + ch / 2 + 120);
+    chip(Math.round(gap) + '', cx + cw - pad - 60, gy + gap / 2);
+  }
+  ctx.restore();
+  const st = E.outExpo(P(t, 15.2, 15.9));
+  rich([{ s: 'Space has ', w: 400, c: C.grey }, { s: 'weight', w: 800, c: C.violet }, { s: ' too.', w: 400, c: C.grey }], 540, 1360 - (1 - st) * 30, 46, { alpha: st });
+  ctx.restore();
+}
+
+// ---------- S6 · Grid ----------
+const GRID = { M: 96, G: 32 };
+const S6F = [
+  { s: 'One', size: 132, w: 800, fx: 560, fy: 520, fr: .3, ty: 720 },
+  { s: 'invisible', size: 132, w: 200, i: true, c: C.violet, fx: 240, fy: 1000, fr: -.25, ty: 870 },
+  { s: 'structure.', size: 132, w: 800, fx: 180, fy: 1260, fr: .14, ty: 1020 },
+  { s: 'Align every element to the same edge.', size: 38, w: 400, c: C.grey, fx: 300, fy: 380, fr: -.12, ty: 1120 }
+];
+function s6(t) {
+  if (t < 17.9 || t > 22.2) return;
+  const { M, G } = GRID, cw = (W - 2 * M - 3 * G) / 4;
+  const edges = [];
+  for (let i = 0; i < 4; i++) { const x = M + i * (cw + G); edges.push(x, x + cw); }
+  const ro = E.inOut(P(t, 21.35, 21.9));
+  for (let i = 0; i < 4; i++) {
+    const p = E.inOut(P(t, 18.0 + i * .06, 18.7 + i * .06));
+    ctx.fillStyle = `rgba(91,59,232,${.045 * p * (1 - ro)})`;
+    ctx.fillRect(M + i * (cw + G), 0, cw, H);
+  }
+  edges.forEach((x, i) => {
+    const p = E.inOut(P(t, 18.0 + i * .04, 18.7 + i * .04));
+    ctx.save(); ctx.strokeStyle = C.violet; ctx.globalAlpha = .22; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, H * ro); ctx.lineTo(x, H * p); ctx.stroke(); ctx.restore();
+  });
+  // the margin edge lights up once things snap
+  const hl = P(t, 19.75, 20.0) * (1 - ro);
+  if (hl > 0) {
+    ctx.save(); ctx.strokeStyle = C.violet; ctx.globalAlpha = .9 * hl; ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(91,59,232,.6)'; ctx.shadowBlur = 18;
+    ctx.beginPath(); ctx.moveTo(M, 560); ctx.lineTo(M, 1160); ctx.stroke(); ctx.restore();
+  }
+  const fo = E.in3(P(t, 21.4, 21.95));
+  S6F.forEach((f, i) => {
+    const a = 19.3 + i * .28;
+    const pin = E.outExpo(P(t, 18.3 + i * .1, 18.9 + i * .1));
+    const p = P(t, a, a + .55), e = E.back(p);
+    const wob = Math.sin(t * 2 + i * 1.7) * 10 * (1 - p);
+    txt(f.s, lerp(f.fx, M, e) + wob, lerp(f.fy, f.ty, e) - fo * 100, {
+      size: f.size, weight: f.w, italic: f.i, color: f.c || C.ink, align: 'left',
+      rot: lerp(f.fr, 0, E.out3(p)), alpha: pin * (1 - fo), blur: (1 - pin) * 12 + fo * 8,
+      fam: f.size < 60 ? TEXT : DISP
+    });
+    // snap tick
+    const fl = P(t, a + .3, a + .8);
+    if (fl > 0 && fl < 1) {
+      ctx.save(); ctx.globalAlpha = 1 - fl; ctx.fillStyle = C.violet;
+      ctx.fillRect(M - 3, f.ty - f.size * .74, 6, f.size * .78);
+      ctx.beginPath(); ctx.arc(M, f.ty - f.size * .35, 10 + fl * 30, 0, Math.PI * 2);
+      ctx.strokeStyle = C.violet; ctx.lineWidth = 3; ctx.stroke();
+      ctx.restore();
+    }
+  });
+}
+
+// ---------- S7 · Resolution ----------
+const PILLS = [['Scale', 23.3], ['Weight', 23.7], ['Space', 24.1], ['Grid', 24.5]];
+function s7(t) {
+  if (t < 21.8 || t > 26.8) return;
+  const out = E.in3(P(t, 25.9, 26.5));
+  ctx.save(); ctx.globalAlpha = 1 - out;
+  ctx.translate(540, 960); ctx.scale(lerp(1, .35, out), lerp(1, .35, out)); ctx.translate(-540, -960);
+  if (out > 0) ctx.filter = `blur(${out * 18}px)`;
+  reveal('THE ART OF', 540, 640, { size: 34, weight: 600, ls: 14, color: C.violet, fam: TEXT }, E.outExpo(P(t, 22.0, 22.7)));
+  reveal('Typographic', 540, 800, { size: 136, weight: 800 }, E.outExpo(P(t, 22.15, 22.9)));
+  reveal('Balance.', 540, 990, { size: 190, weight: 200, grad: true }, E.outExpo(P(t, 22.35, 23.1)));
+  // pills
+  const ws = PILLS.map(([l]) => measure(l, 32, 600, 0, false, TEXT) + 100);
+  const total = ws.reduce((a, b) => a + b, 0) + 18 * 3;
+  let x = (W - total) / 2;
+  PILLS.forEach(([l, a], i) => {
+    const p = clamp(E.back(P(t, a, a + .45)), 0, 1.3);
+    if (p > 0) {
+      ctx.save(); ctx.translate(x + ws[i] / 2, 1200); ctx.scale(p, p);
+      ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(58,37,184,.14)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8;
+      rr(-ws[i] / 2, -39, ws[i], 78, 39); ctx.fill(); ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.stroke();
+      check(-ws[i] / 2 + 38, 0, 17);
+      font(32, 600, false, TEXT); ctx.letterSpacing = '0px'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = C.ink; ctx.fillText(l, -ws[i] / 2 + 68, 2);
+      ctx.restore();
+    }
+    x += ws[i] + 18;
+  });
+  // the beam carries the lesson: heavy-small vs light-big, perfectly level
+  const bp = E.outExpo(P(t, 22.9, 23.5));
+  wordOnBeam('Aa', -300, t, { size: 96, weight: 900, alpha: bp }, (1 - bp) * 120);
+  wordOnBeam('Aa', 290, t, { size: 170, weight: 100, alpha: bp }, (1 - bp) * 120);
+  ctx.restore();
+}
+
+// ---------- S8 · Outro (bookends the opening prompt) ----------
+function s8(t) {
+  if (t < 26.1) return;
+  const pin = E.outExpo(P(t, 26.2, 27.0)), fade = 1 - P(t, 29.5, 30);
+  const cx = 540, cy = 960, pw = 860, ph = 140;
+  const text = 'Save this for your next layout';
+  const typed = Math.floor(text.length * P(t, 26.6, 27.5));
+  const saved = t > 28.15;
+  const bx = cx + pw / 2 - 80;
+  ctx.save(); ctx.globalAlpha = pin * fade; ctx.translate(cx, cy);
+  ctx.scale(lerp(.6, 1, pin), lerp(.6, 1, pin));
+  if (pin < 1) ctx.filter = `blur(${(1 - pin) * 18}px)`;
+  ctx.shadowColor = 'rgba(91,59,232,0.28)'; ctx.shadowBlur = 90; ctx.shadowOffsetY = 24;
+  ctx.fillStyle = '#fff'; rr(-pw / 2, -ph / 2, pw, ph, ph / 2); ctx.fill(); ctx.shadowColor = 'transparent';
+  const g = ctx.createLinearGradient(-pw / 2, 0, pw / 2, 0); g.addColorStop(0, C.lilac); g.addColorStop(1, C.violet);
+  ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.stroke();
+  font(40, 500, false, TEXT); ctx.letterSpacing = '0px'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = C.ink; const s = text.slice(0, typed); ctx.fillText(s, -pw / 2 + 64, 2);
+  if (typed < text.length || (!saved && Math.floor(t * 2.4) % 2 === 0)) { ctx.fillStyle = C.violet; ctx.fillRect(-pw / 2 + 64 + ctx.measureText(s).width + 6, -26, 4, 52); }
+  // bookmark button
+  const press = (t > 28.05 && t < 28.3) ? 1 - .1 * Math.sin(P(t, 28.05, 28.3) * Math.PI) : 1;
+  ctx.save(); ctx.translate(pw / 2 - 80, 0); ctx.scale(press, press);
+  ctx.fillStyle = saved ? C.violet : C.mist; ctx.beginPath(); ctx.arc(0, 0, 48, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-14, -19); ctx.lineTo(14, -19); ctx.lineTo(14, 20); ctx.lineTo(0, 9); ctx.lineTo(-14, 20); ctx.closePath();
+  ctx.lineJoin = 'round'; ctx.lineWidth = 4;
+  if (saved) { ctx.fillStyle = '#fff'; ctx.fill(); } else { ctx.strokeStyle = C.violet; ctx.stroke(); }
+  ctx.restore();
+  ctx.restore();
+  ring(bx, cy, P(t, 28.15, 28.8), 50, 240);
+  // toast
+  const tp = clamp(E.back(P(t, 28.3, 28.75)), 0, 1.2) * fade;
+  if (tp > 0) {
+    ctx.save(); ctx.translate(540, 800); ctx.scale(tp, tp); ctx.globalAlpha = clamp(tp);
+    ctx.fillStyle = C.ink; rr(-200, -36, 400, 72, 36); ctx.fill();
+    check(-158, 0, 16);
+    font(28, 600, false, TEXT); ctx.letterSpacing = '0px'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff'; ctx.fillText('Saved to Typography', -128, 2);
+    ctx.restore();
+  }
+  txt(CTA, 540, 1120 + (1 - E.outExpo(P(t, 28.5, 29.1))) * 30, { size: 32, weight: 500, color: C.grey, fam: TEXT, alpha: P(t, 28.5, 29.0) * fade });
+  const pm = E.inOut(P(t, 27.5, 28.05));
+  cursor(lerp(900, bx + 8, pm), lerp(1400, cy + 12, pm), P(t, 27.4, 27.6) * (1 - P(t, 28.9, 29.2)), (t > 28.05 && t < 28.3) ? .9 : 1);
+}
+
+// ---------- frame ----------
+function render(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none';
+  bg(t);
+  drawBeam(t);
+  s1(t); s2(t); s3(t); s4(t); s5(t); s6(t); s7(t); s8(t);
+  chrome(t);
+  sweep(t);
+}
+
+const weights = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+window.ready = Promise.all([
+  ...weights.map(w => document.fonts.load(`${w} 100px "Inter Display"`)),
+  ...weights.map(w => document.fonts.load(`${w} 100px Inter`)),
+  document.fonts.load('italic 200 100px "Inter Display"')
+]).catch(() => {}).then(() => { render(0); return true; });
+window.renderAt = render;
+window.DUR = DUR; window.FPS = FPS;
+
+if (location.search.includes('capture')) {
+  document.body.classList.add('capture');
+} else {
+  let paused = false, start = performance.now(), held = 0;
+  cv.addEventListener('click', () => {
+    paused = !paused;
+    if (!paused) start = performance.now() - held * 1000;
+  });
+  window.ready.then(() => {
+    const loop = now => {
+      if (!paused) { held = ((now - start) / 1000) % DUR; render(held); }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  });
+}
+</script>
+</body>
+</html>
