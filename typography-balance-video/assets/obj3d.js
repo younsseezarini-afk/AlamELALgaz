@@ -142,7 +142,7 @@ function shield() {
   cut.rotation.y = Math.PI / 2; cut.scale.set(0.42, 1.25, 1); s.pivot.add(cut);
   const edge = new THREE.Mesh(new THREE.TorusGeometry(1, 0.012, 8, 120, Math.PI), rimGlow); edge.rotation.z = Math.PI / 2; edge.scale.set(1.25, 0.9, 1); s.pivot.add(edge);
   const aa = text('Aa', 0.34, 0.02, glyph); aa.position.set(-0.43, 0, 0.45); s.pivot.add(aa);
-  const P = [], C = [], seeds = [], N = 2200, light = new THREE.Color(0xe7b3e2), deep = new THREE.Color(0x8e3c8c);
+  const P = [], C = [], seeds = [], N = 2200, light = new THREE.Color(0xffffff), deep = new THREE.Color(0xe7a6e0);
   for (let i = 0; i < N; i++) {
     const y = 1 - ((i + 0.5) / N) * 2, r = Math.sqrt(1 - y * y), phi = i * 2.399963;
     const x = Math.cos(phi) * r, z = Math.sin(phi) * r;

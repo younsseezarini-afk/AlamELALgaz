@@ -47,17 +47,17 @@ body{overflow:hidden}
 /* type */
 .hl{position:absolute;left:50px;right:50px;text-align:center;letter-spacing:-.03em;line-height:1.04;z-index:5}
 .bw{display:inline-block}
-.ink{color:#1E0B1F}
+.ink{color:#fff}
 .blush{color:#F2C9EA}
 .grad{background:linear-gradient(90deg,#FFE3F6 0%,#DCA0DC 50%,#B46EAA 100%);-webkit-background-clip:text;background-clip:text;color:transparent;padding:0 .04em}
 .gradW{background:linear-gradient(90deg,#FFFFFF 0%,#FFE3F6 55%,#F7C6EC 100%);-webkit-background-clip:text;background-clip:text;color:transparent;padding:0 .04em;filter:drop-shadow(0 4px 18px rgba(42,14,44,.35))}
-.gradInk{background:linear-gradient(90deg,#C2569F 0%,#8E3C8C 55%,#4A1A4E 100%);-webkit-background-clip:text;background-clip:text;color:transparent;padding:0 .04em}
+.gradInk{background:linear-gradient(90deg,#FFFFFF 0%,#FFE3F6 50%,#F7C6EC 100%);-webkit-background-clip:text;background-clip:text;color:transparent;padding:0 .04em}
 .center{position:absolute;left:0;right:0;text-align:center}
 .chip{display:inline-flex;align-items:center;gap:14px;padding:14px 26px;border-radius:999px;border:2px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);font:500 24px/1 var(--mono);letter-spacing:.1em;color:#fff;text-transform:uppercase;white-space:nowrap}
 .chip i{width:12px;height:12px;border-radius:50%;background:#F2B6E8;box-shadow:0 0 14px #F2B6E8}
 .chip.solid{background:rgba(30,11,31,.5);border-color:rgba(255,255,255,.6);font-weight:600;box-shadow:0 10px 30px rgba(30,11,31,.25)}
-.chip.inkc{border-color:rgba(30,11,31,.22);background:rgba(255,255,255,.7);color:#1E0B1F}
-.chip.inkc i{background:#A05A96;box-shadow:none}
+.chip.inkc{border-color:rgba(255,255,255,.6);background:rgba(30,11,31,.5);color:#fff;font-weight:600}
+.chip.inkc i{background:#F2B6E8;box-shadow:0 0 14px #F2B6E8}
 .glass{border-radius:36px;background:linear-gradient(180deg,rgba(60,24,60,.62),rgba(18,10,18,.82));border:2px solid rgba(220,160,220,.28);box-shadow:inset 0 2px 0 rgba(255,255,255,.08),0 40px 90px rgba(0,0,0,.45)}
 .sel{position:absolute;border:3px solid #F2B6E8;pointer-events:none}
 .sel i{position:absolute;width:22px;height:22px;background:#fff;border:3px solid #F2B6E8;border-radius:4px}
@@ -126,8 +126,8 @@ body{overflow:hidden}
   <!-- S5 typeface -->
   <div class="sc" id="s5">
     <div class="center" style="top:250px"><span class="chip inkc" id="s5c"><i></i>Rule 02 · Typeface</span></div>
-    <div class="center ink" id="s5type" style="top:390px;font-size:84px;font-weight:600;letter-spacing:-.02em"><span id="s5tt"></span><span id="s5car" style="display:inline-block;width:6px;height:86px;background:#A05A96;vertical-align:-12px;margin-left:6px"></span></div>
-    <div class="hl" id="s5a" style="top:540px;font-size:64px;font-weight:400;color:#8E3C8C"><span class="bw">Build</span> <span class="bw">One</span></div>
+    <div class="center ink" id="s5type" style="top:390px;font-size:84px;font-weight:600;letter-spacing:-.02em"><span id="s5tt"></span><span id="s5car" style="display:inline-block;width:6px;height:86px;background:#FFE3F6;vertical-align:-12px;margin-left:6px"></span></div>
+    <div class="hl" id="s5a" style="top:540px;font-size:64px;font-weight:400;color:#FFE3F6"><span class="bw">Build</span> <span class="bw">One</span></div>
     <div class="center" style="top:620px;height:200px"><span class="bw ink" id="s5id" style="font-size:170px;line-height:1.1;white-space:nowrap">Identity</span></div>
     <div class="center" style="top:850px"><span class="pill" id="s5font" style="background:#1E0B1F;color:#F2C9EA;font-size:24px;padding:12px 20px">Playfair Display</span></div>
     <canvas id="s5sh" class="abs" data-o="shield" width="560" height="480" style="left:260px;top:930px;width:560px;height:480px"></canvas>
@@ -228,7 +228,7 @@ function BW(root,t,tin,tout,st){
 function pop(el,t,a,out,base){const k=E.outBack(P(t,a,a+0.35));const x=out===undefined?0:E.inCubic(P(t,out,out+0.25));T(el,0,-20*x,L(base===undefined?0.2:base,1,k)*L(1,.8,x),0,P(t,a,a+0.12)*(1-x),8*x);}
 
 const WIN={s1:[0,3.95],s2:[3.15,4.75],s3:[4.5,9.2],s4:[8.95,13.72],s5:[13.55,18.3],s6:[18.15,22.9],s7:[22.7,25.2],s8:[25.0,29.75],s9:[29.6,DUR+1]};
-const GROUND=[[0,'light'],[3.3,'dark',0.5],[8.95,'mesh',0.25],[13.5,'light',0.25],[18.1,'dark',0.2],[22.75,'mesh',0.2],[25.05,'dark',0.15],[29.6,'mesh',0.25]];
+const GROUND=[[0,'mesh']]; // the gradient mesh is the ground for every scene
 function ground(t){const cur={light:1,mesh:0,dark:0};
   for(const [a,g,d] of GROUND){if(t<a) break;const k=d?E.inOutCubic(P(t,a,a+d)):1;for(const key in cur) cur[key]=L(cur[key],key===g?1:0,k);}
   return cur;}
