@@ -1,0 +1,635 @@
+<title>Type Has Weight Reel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@100..900&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+/* Time-driven reel, v2 motion: card cascade → burst → blur-in kinetic type on mesh / dark / paper grounds.
+   Every frame is computed by renderAt(t). 1080 × 1920, 105 BPM, 20 bars. */
+:root{--display:'Inter Tight','Helvetica Neue',Helvetica,Arial,sans-serif;--mono:'Geist Mono',ui-monospace,Menlo,monospace;color-scheme:dark}
+html,body{margin:0;height:100%;background:#000}
+body{overflow:hidden}
+#view{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0}
+#stage{position:absolute;inset:0;overflow:hidden;background:#07031A;font-family:var(--display);color:#F5F2FF;line-height:1.1;font-size:32px}
+#stage *{box-sizing:border-box}
+.abs{position:absolute}
+.fill{position:absolute;inset:0}
+
+/* grounds */
+#bgDark .bgx{position:absolute;inset:0;background:
+  radial-gradient(1000px 560px at 50% 112%,rgba(108,52,230,.62),transparent 70%),
+  radial-gradient(760px 640px at 92% 4%,rgba(72,24,184,.26),transparent 70%),
+  linear-gradient(180deg,#07031A 0%,#0B0524 55%,#160A38 100%)}
+#bgDark .floor{position:absolute;left:-60%;right:-60%;bottom:-260px;height:980px;
+  background-image:linear-gradient(rgba(184,160,248,.18) 2px,transparent 2px),linear-gradient(90deg,rgba(184,160,248,.18) 2px,transparent 2px);
+  background-size:190px 190px;background-position:center bottom;transform:perspective(760px) rotateX(74deg);transform-origin:50% 100%;
+  -webkit-mask-image:linear-gradient(to top,#000 5%,transparent 70%);mask-image:linear-gradient(to top,#000 5%,transparent 70%)}
+#bgMesh{background:linear-gradient(160deg,#3A15A8 0%,#6B3BEA 45%,#9C7BF0 100%)}
+#bgLight{background:#F3EFFF}
+.blob{position:absolute;border-radius:50%}
+#rays{position:absolute;width:2800px;height:2800px;margin:-1400px 0 0 -1400px;border-radius:50%;opacity:0;
+  background:conic-gradient(from 0deg,
+   rgba(107,59,234,.95) 0deg 14deg,transparent 14deg 34deg,rgba(255,143,184,.9) 34deg 44deg,transparent 44deg 70deg,
+   rgba(184,160,248,.95) 70deg 88deg,transparent 88deg 108deg,rgba(72,24,184,.95) 108deg 121deg,transparent 121deg 146deg,
+   rgba(201,184,255,.9) 146deg 160deg,transparent 160deg 186deg,rgba(255,143,184,.85) 186deg 197deg,transparent 197deg 220deg,
+   rgba(107,59,234,.95) 220deg 238deg,transparent 238deg 262deg,rgba(245,242,255,.85) 262deg 271deg,transparent 271deg 296deg,
+   rgba(184,160,248,.95) 296deg 313deg,transparent 313deg 334deg,rgba(72,24,184,.95) 334deg 347deg,transparent 347deg 360deg);
+  -webkit-mask-image:radial-gradient(closest-side,transparent 4%,#000 16%,#000 50%,transparent 96%);mask-image:radial-gradient(closest-side,transparent 4%,#000 16%,#000 50%,transparent 96%)}
+#bloom{position:absolute;width:1600px;height:1600px;margin:-800px 0 0 -800px;border-radius:50%;opacity:0;
+  background:radial-gradient(circle,#fff 0,rgba(255,255,255,.95) 6%,rgba(233,221,255,.7) 14%,rgba(184,160,248,.28) 28%,transparent 52%)}
+#black{position:absolute;inset:0;background:#000;opacity:0;z-index:40}
+
+/* watermark */
+#wm{position:absolute;top:110px;right:64px;display:flex;align-items:center;gap:16px;z-index:30;font:600 26px/1 var(--display);letter-spacing:.01em}
+#wm img{width:58px;height:58px;border-radius:50%;border:2px solid #B8A0F8;object-fit:cover}
+
+/* type */
+.hl{position:absolute;left:50px;right:50px;text-align:center;letter-spacing:-.03em;line-height:1.04;z-index:5}
+.bw{display:inline-block;will-change:transform,filter}
+.ink{color:#120829}
+.lav{color:#C9B8FF}
+.grad{background:linear-gradient(90deg,#FF8FB8 0%,#C9B8FF 45%,#7B4DFF 100%);-webkit-background-clip:text;background-clip:text;color:transparent;padding:0 .04em}
+.gradInk{background:linear-gradient(90deg,#FF6FAE 0%,#9C6BFF 55%,#4818B8 100%);-webkit-background-clip:text;background-clip:text;color:transparent;padding:0 .04em}
+.chip{display:inline-flex;align-items:center;gap:14px;padding:14px 26px;border-radius:999px;border:2px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);font:500 24px/1 var(--mono);letter-spacing:.1em;color:#fff;text-transform:uppercase;white-space:nowrap}
+.chip i{width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 14px #fff}
+.center{position:absolute;left:0;right:0;text-align:center}
+.tilt{display:inline-flex;gap:16px;align-items:center;padding:16px 26px;border-radius:20px;background:rgba(14,8,36,.78);border:2px solid rgba(184,160,248,.28);font:500 28px/1 var(--mono);color:#EDE6FF;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tilt .dot{width:16px;height:16px;border-radius:50%;background:#B8A0F8;box-shadow:0 0 16px #B8A0F8}
+.tilt.warn{border-color:rgba(255,143,184,.5)}.tilt.warn .dot{background:#FF8FB8;box-shadow:0 0 16px #FF8FB8}
+.tilt.ok{border-color:#B8A0F8;box-shadow:0 0 40px rgba(184,160,248,.45)}
+.glass{border-radius:32px;background:linear-gradient(180deg,rgba(44,24,96,.62),rgba(16,9,40,.8));border:2px solid rgba(184,160,248,.26);box-shadow:inset 0 2px 0 rgba(255,255,255,.08),0 40px 90px rgba(0,0,0,.45)}
+.paper{border-radius:32px;background:#fff;border:1px solid rgba(72,24,184,.08);box-shadow:0 30px 70px rgba(72,24,184,.18),0 4px 14px rgba(72,24,184,.08)}
+.insp{padding:30px 36px;display:grid;gap:22px;font:500 24px/1.2 var(--mono);color:#A99BC9}
+.row{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.row b{color:#fff;font-weight:500}
+.track{height:10px;border-radius:10px;background:rgba(184,160,248,.18);position:relative}
+.track .tf{position:absolute;left:0;top:0;bottom:0;border-radius:10px;background:linear-gradient(90deg,#6B3BEA,#B8A0F8)}
+.track .knob{position:absolute;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:#fff;box-shadow:0 0 0 8px rgba(184,160,248,.32),0 0 30px rgba(184,160,248,.6)}
+.ticks{display:flex;justify-content:space-between;font-size:20px;color:#6E6390}
+.sel{position:absolute;border:3px solid #B8A0F8;pointer-events:none}
+.sel.ink3{border-color:#6B3BEA}
+.sel i{position:absolute;width:22px;height:22px;background:#fff;border:3px solid #B8A0F8;border-radius:4px}
+.sel.ink3 i{border-color:#6B3BEA}
+.sel .tl{left:-13px;top:-13px}.sel .tr{right:-13px;top:-13px}.sel .bl{left:-13px;bottom:-13px}.sel .br{right:-13px;bottom:-13px}
+.dim{position:absolute;background:#B8A0F8;color:#120829;font:600 22px/1 var(--mono);padding:8px 14px;border-radius:8px;white-space:nowrap}
+.gaze{position:absolute;width:62px;height:62px;border-radius:50%;border:3px solid #FFC857;color:#FFC857;font:600 26px/56px var(--mono);text-align:center;background:rgba(255,200,87,.1);opacity:0}
+#cur{position:absolute;left:0;top:0;z-index:35;width:64px;height:76px;opacity:0}
+#cur svg{width:64px;height:76px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45))}
+#cur span{position:absolute;left:50px;top:62px;background:#B8A0F8;color:#120829;font:600 24px/1 var(--display);padding:10px 16px;border-radius:4px 12px 12px 12px;white-space:nowrap}
+#ripple{position:absolute;left:0;top:0;width:140px;height:140px;margin:-70px 0 0 -70px;border-radius:50%;border:3px solid #B8A0F8;z-index:34;opacity:0}
+
+/* chrome beam */
+.beam{position:absolute;left:110px;width:860px;height:320px}
+.bar{position:absolute;left:0;right:0;top:120px;height:38px;border-radius:8px;transform-origin:50% 50%;
+  background:linear-gradient(180deg,#F4EDFF 0%,#C2A8FF 12%,#7046E0 36%,#341687 66%,#170A40 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.1),0 18px 50px rgba(120,70,255,.5),0 0 90px rgba(120,70,255,.25)}
+.bar::after{content:"";position:absolute;left:3%;right:3%;top:4px;height:5px;border-radius:5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent)}
+.fulcrum{position:absolute;left:50%;top:158px;width:150px;height:116px;margin-left:-75px;clip-path:polygon(50% 0,100% 100%,0 100%);background:linear-gradient(115deg,#EADFFF 0%,#9A78F2 30%,#4A23B5 62%,#1C0E52 100%)}
+.refl{position:absolute;left:4%;right:4%;top:252px;height:70px;background:radial-gradient(closest-side,rgba(160,110,255,.7),transparent);filter:blur(10px)}
+.load{position:absolute;bottom:100%;line-height:.78;white-space:nowrap;color:#fff}
+.load.l{left:10px}.load.r{right:10px}
+.lw{position:absolute;bottom:4px}
+.load.l .lw{left:0}.load.r .lw{right:0}
+
+/* cascade cards */
+.pcard{position:absolute;left:70px;top:0;width:760px;height:300px;transform-style:preserve-3d}
+.pc-in{position:absolute;inset:0;border-radius:40px;padding:40px 44px;box-shadow:0 40px 80px rgba(18,8,41,.35),inset 0 2px 0 rgba(255,255,255,.12)}
+.pc-t{font-size:46px;font-weight:600;letter-spacing:-.02em;color:#fff;display:flex;align-items:center;gap:16px}
+.pc-t i{width:18px;height:18px;border-radius:50%;background:#FF8FB8;box-shadow:0 0 14px #FF8FB8}
+.pc-ic{display:flex;gap:18px;margin-top:44px}
+.pc-ic b{width:84px;height:84px;border-radius:22px;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.18);display:grid;place-items:center;font:600 30px var(--mono);color:#fff}
+.pc-obj{position:absolute}
+
+.poster{position:absolute;border-radius:36px;background:linear-gradient(180deg,rgba(42,24,92,.92),rgba(16,9,40,.96));border:2px solid rgba(184,160,248,.3);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.07),0 60px 120px rgba(0,0,0,.45),0 0 140px rgba(107,59,234,.25)}
+.poster > *{position:absolute}
+.p-eye{font:500 22px/1 var(--mono);letter-spacing:.2em;color:#C9B8FF;text-transform:uppercase;white-space:nowrap}
+.p-cta{padding:22px 40px;border-radius:999px;background:linear-gradient(90deg,#6B3BEA,#B8A0F8);color:#fff;font-weight:600;font-size:30px;white-space:nowrap;box-shadow:0 10px 40px rgba(107,59,234,.45)}
+.p-meta{font-size:28px;color:#A99BC9;white-space:nowrap}
+.pill-img{display:inline-block;width:230px;height:108px;border-radius:999px;background-size:cover;background-position:center;vertical-align:-14px;border:2px solid rgba(184,160,248,.4);box-shadow:0 0 40px rgba(107,59,234,.35)}
+.img-blend{position:absolute;background-size:cover;background-position:center;-webkit-mask-image:radial-gradient(closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(closest-side,#000 62%,transparent 100%)}
+.redl{position:absolute;background:#FF8FB8}
+.redt{position:absolute;background:#FF8FB8;color:#120829;font:600 22px/1 var(--mono);padding:8px 12px;border-radius:8px;white-space:nowrap}
+.sc{position:absolute;inset:0;display:none;transform-origin:50% 50%}
+.fan-card{position:absolute;width:380px;height:520px;border-radius:34px;padding:30px;background:#fff;box-shadow:0 40px 80px rgba(18,8,41,.35);color:#120829;overflow:hidden}
+.fan-card .tag{font:600 20px var(--mono);padding:8px 12px;border-radius:10px;display:inline-block}
+.conf{position:absolute;left:0;top:0}
+.toggle{position:relative;display:inline-block;width:220px;height:120px;border-radius:999px;vertical-align:middle}
+.toggle .k{position:absolute;top:12px;left:12px;width:96px;height:96px;border-radius:50%;background:#fff;box-shadow:0 8px 20px rgba(18,8,41,.25)}
+</style>
+
+<div id="view"><div id="stage">
+  <div class="fill" id="bgDark"><div class="bgx"></div><div class="floor"></div></div>
+  <div class="fill" id="bgMesh"><div class="blob" id="mb1"></div><div class="blob" id="mb2"></div><div class="blob" id="mb3"></div><div class="blob" id="mb4"></div></div>
+  <div class="fill" id="bgLight"><div class="blob" id="lb1"></div><div class="blob" id="lb2"></div><div class="blob" id="lb3"></div></div>
+  <div id="rays"></div><div id="bloom"></div>
+
+  <div class="fill" id="world">
+
+  <!-- ═══ S1 cascade ═══ -->
+  <div class="sc" id="s1">
+    <div class="hl ink" id="s1a" style="top:230px;font-size:100px;font-weight:600">
+      <span class="bw">Your</span> <span class="bw">layout</span><br><span class="bw">isn't</span> <span class="bw" style="position:relative"><span class="gradInk">ugly</span><span id="strike" class="abs" style="left:-4px;right:-4px;top:54%;height:9px;background:#FF5A9E;border-radius:6px;transform-origin:0 50%;transform:scaleX(0)"></span></span><span class="bw">.</span>
+    </div>
+    <div class="hl ink" id="s1b" style="top:230px">
+      <div style="font-size:100px;font-weight:600"><span class="bw">It's</span></div>
+      <div id="s1unb" style="font-size:136px;font-weight:800;letter-spacing:-.04em"></div>
+    </div>
+    <div class="fill" id="pile" style="perspective:1800px;perspective-origin:50% 40%"></div>
+  </div>
+
+  <!-- ═══ S2 particles ═══ -->
+  <div class="sc" id="s2"></div>
+
+  <!-- ═══ S3 beam reveal ═══ -->
+  <div class="sc" id="s3">
+    <div class="hl" id="s3h" style="top:300px"><div class="lav" style="font-size:84px;font-weight:400"><span class="bw">Every</span> <span class="bw">word</span></div><div style="font-size:150px;font-weight:600"><span class="bw">has</span> <span class="bw">weight.</span></div></div>
+    <div class="fill" style="perspective:1600px;perspective-origin:50% 62%">
+      <div class="beam" id="beam3" style="top:1040px">
+        <div class="bar" id="bar3">
+          <div class="load l"><span class="lw" id="b3w" style="left:-30px;font-size:150px;font-weight:900;letter-spacing:-.03em"><span id="b3t" style="position:relative">BUILD</span><span class="sel" id="b3sel" style="left:-14px;right:-14px;top:-14px;bottom:-8px;opacity:0"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span><span class="gaze" id="g1" style="right:-70px;top:-60px">1</span></span></div>
+          <div class="load r"><span class="lw" id="b3r" style="font-size:40px">10:00 AM<span class="gaze" id="g2" style="right:-30px;top:-86px">2</span></span></div>
+        </div>
+        <div class="fulcrum"></div><div class="refl"></div>
+      </div>
+    </div>
+    <div class="center" style="top:1470px"><div class="tilt warn" id="t3" style="opacity:0"><span class="dot"></span><span id="t3v">Tilt 0.0°</span></div></div>
+  </div>
+
+  <!-- ═══ S4 size (mesh) ═══ -->
+  <div class="sc" id="s4">
+    <div class="center" style="top:300px"><span class="chip" id="s4c"><i></i>Lever 01 · Size</span></div>
+    <div class="hl" id="s4h" style="top:390px;font-size:60px;font-weight:500"><span class="bw">Size</span> <span class="bw">is</span> <span class="bw">the</span> <span class="bw">heaviest</span> <span class="bw">lever.</span></div>
+    <div class="center" style="top:760px;height:420px;display:flex;align-items:center;justify-content:center">
+      <span id="s4w" style="position:relative;display:inline-block;font-size:300px;font-weight:900;letter-spacing:-.04em;line-height:.8;padding-top:.06em">BUILD
+        <span class="sel" id="s4sel" style="left:-22px;right:-22px;top:-18px;bottom:-22px"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br" id="s4br"></i></span>
+        <span class="dim" id="s4dim" style="left:50%;bottom:-74px;transform:translateX(-50%)">300 px</span>
+        <span id="s4badge" class="abs" style="right:-96px;top:-130px;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.22);border:3px solid rgba(255,255,255,.55);box-shadow:0 20px 50px rgba(18,8,41,.3)"><img src="assets/cut/sphere.png" alt="" style="position:absolute;left:18px;top:18px;width:134px"></span>
+      </span>
+    </div>
+    <div class="hl" id="s4p" style="top:1250px;font-size:110px;font-weight:600"><span class="bw">Pick</span> <span class="bw">one</span> <span class="bw">hero.</span></div>
+    <div class="center" id="s4lad" style="top:1440px;display:flex;justify-content:center;gap:18px">
+      <span class="chip lad" style="font-size:22px;padding:14px 22px"><b style="font:700 44px var(--display);letter-spacing:-.02em">Aa</b>128</span>
+      <span class="chip lad" style="font-size:22px;padding:14px 22px"><b style="font:600 32px var(--display)">Aa</b>64</span>
+      <span class="chip lad" style="font-size:22px;padding:14px 22px"><b style="font:500 24px var(--display)">Aa</b>32</span>
+      <span class="chip lad" style="font-size:22px;padding:14px 22px"><b style="font:500 16px var(--display)">Aa</b>16</span>
+    </div>
+  </div>
+
+  <!-- ═══ S5 weight (dark, 3D beam) ═══ -->
+  <div class="sc" id="s5">
+    <div class="hl" id="s5h" style="top:290px"><div class="lav" style="font-size:60px"><span class="bw">Weight</span> <span class="bw">works</span> <span class="bw">too.</span></div><div style="font-size:104px;font-weight:600"><span class="bw">Light</span> <span class="bw">balances</span> <span class="bw">bold.</span></div></div>
+    <div class="abs glass insp" id="s5sl" style="left:72px;right:72px;top:640px">
+      <div class="row"><span>FONT WEIGHT · wght</span><b id="s5v">900</b></div>
+      <div class="track" style="margin-block:10px"><div class="tf" id="s5f" style="width:100%"></div><div class="knob" id="s5k" style="left:100%"></div></div>
+      <div class="ticks"><span>100</span><span>300</span><span>500</span><span>700</span><span>900</span></div>
+    </div>
+    <div class="fill" style="perspective:1500px;perspective-origin:50% 60%">
+      <div class="beam" id="beam5" style="top:1060px">
+        <div class="bar" id="bar5">
+          <div class="load l"><span class="lw" id="b5l" style="font-size:176px;font-weight:900;letter-spacing:-.02em">
+            <span class="abs trail" style="left:-44px;bottom:0;font-weight:900;color:rgba(184,160,248,.10)">Light</span>
+            <span class="abs trail" style="left:-33px;bottom:0;font-weight:700;color:rgba(184,160,248,.16)">Light</span>
+            <span class="abs trail" style="left:-22px;bottom:0;font-weight:500;color:rgba(184,160,248,.24)">Light</span>
+            <span class="abs trail" style="left:-11px;bottom:0;font-weight:300;color:rgba(184,160,248,.36)">Light</span>
+            <span id="b5lt" style="position:relative">Light</span></span></div>
+          <div class="load r"><span class="lw" style="font-size:80px;font-weight:900;letter-spacing:-.02em">BOLD</span></div>
+        </div>
+        <div class="fulcrum"></div><div class="refl"></div>
+      </div>
+    </div>
+    <div class="center" style="top:1480px"><div class="tilt warn" id="t5"><span class="dot"></span><span id="t5v">Tilt 0.0°</span></div></div>
+    <div class="center" id="s5eq" style="top:1600px;font:500 26px var(--mono);color:#A99BC9;letter-spacing:.04em">big + light  =  small + bold</div>
+    <div class="fill" id="coins"></div>
+  </div>
+
+  <!-- ═══ S6 color (paper) ═══ -->
+  <div class="sc" id="s6">
+    <div class="hl ink" id="s6h" style="top:280px;font-size:74px;font-weight:600"><span class="bw">Color</span> <span class="bw">adds</span> <span class="bw">weight.</span></div>
+    <div class="abs" id="s6sat" style="left:540px;top:600px;transform-origin:0 0;z-index:6"><span style="display:inline-block;transform:translate(-50%,-50%);font-size:150px;font-weight:700;letter-spacing:-.03em;white-space:nowrap"><span class="gradInk">Saturday</span></span>
+      <img id="s6ring" src="assets/cut/ring.png" alt="" class="abs" style="left:300px;top:-170px;width:150px"></div>
+    <div class="abs" id="s6para" style="left:120px;width:840px;top:780px;font-size:40px;line-height:1.42;color:#8F86AE;text-align:center">Two hours on type pairing, grids and spacing. Join us on <span id="s6w" style="position:relative;display:inline-block">Saturday<span class="sel ink3" id="s6sel" style="left:-10px;right:-10px;top:-4px;bottom:-6px;opacity:0"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span></span> at 10:00 AM. Bring one layout you want to fix.</div>
+    <div class="center" style="top:1180px"><div class="paper" id="s6sw" style="display:inline-flex;align-items:center;gap:30px;padding:34px 48px;border-radius:999px">
+      <span style="width:62px;height:62px;border-radius:50%;background:#3A2A5C"></span><span style="width:62px;height:62px;border-radius:50%;background:#8F86AE"></span>
+      <span id="sw4" style="position:relative;width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,#FF6FAE,#7B4DFF)"><span id="sw4r" class="abs" style="inset:-12px;border-radius:50%;border:4px solid #7B4DFF;opacity:0"></span></span>
+      <span style="width:62px;height:62px;border-radius:50%;background:#B8A0F8"></span><span style="width:62px;height:62px;border-radius:50%;background:#E9E3FA;border:2px solid #D8CCF5"></span>
+    </div></div>
+    <div class="hl ink" id="s6p" style="top:1400px;font-size:96px;font-weight:600"><span class="bw">One</span> <span class="bw">word.</span> <span class="bw gradInk">All</span> <span class="bw gradInk">eyes.</span></div>
+  </div>
+
+  <!-- ═══ S7 space ═══ -->
+  <div class="sc" id="s7">
+    <div class="center ink" id="s7type" style="top:880px;font-size:80px;font-weight:500;letter-spacing:-.02em"><span id="s7tt"></span><span id="s7car" style="display:inline-block;width:6px;height:84px;background:#6B3BEA;vertical-align:-12px;margin-left:6px"></span></div>
+    <div class="center" id="s7big" style="top:700px;font-size:250px;font-weight:800;line-height:1;white-space:nowrap;opacity:0">SPACE</div>
+    <div class="hl" id="s7sub" style="top:1000px;font-size:96px;font-weight:500"><span class="bw">you</span> <span class="bw">can't</span> <span class="bw">see.</span></div>
+    <div class="hl" id="s7room" style="top:300px;font-size:100px;font-weight:600"><span class="bw">Room</span> <span class="bw">to</span> <span class="bw">breathe.</span></div>
+    <div class="poster" id="s7p" style="left:120px;top:580px;width:840px;height:820px;opacity:0">
+      <div class="p-eye" id="s7e">Design workshop</div>
+      <div id="s7t" style="font-size:78px;font-weight:600;letter-spacing:-.02em;white-space:nowrap">Build a clear<br><span style="color:#C9B8FF">visual identity.</span></div>
+      <div id="s7b" style="width:560px;font-size:28px;line-height:1.45;color:#A99BC9">Two hours on type pairing, grids and spacing.</div>
+      <div id="s7hatch" style="left:96px;top:540px;width:648px;height:96px;border-radius:12px;background:repeating-linear-gradient(-45deg,rgba(184,160,248,.16) 0 10px,transparent 10px 22px);border:2px dashed rgba(184,160,248,.4);opacity:0"><span style="position:absolute;left:22px;top:34px;font:500 22px var(--mono);color:#C9B8FF;letter-spacing:.06em">EMPTY SPACE · STILL WEIGHT</span></div>
+      <div class="p-meta" id="s7m">Saturday · 10:00 AM</div>
+      <div class="p-cta" id="s7cta" style="font-size:26px;padding:18px 32px">Book your seat</div>
+      <div id="s7red" style="inset:0;opacity:0">
+        <div class="redl" id="rTop" style="left:150px;top:0;width:3px"></div><span class="redt" id="rTopL" style="left:164px">96</span>
+        <div class="redl" id="rLeft" style="left:0;height:3px"></div>
+        <div class="redl" id="rGap" style="left:560px;width:3px"></div><span class="redt" id="rGapL" style="left:576px">48</span>
+        <div id="rLH" style="position:absolute;left:724px;width:24px;border:3px solid #FF8FB8;border-left:0"></div><span class="redt" id="rLHL" style="left:770px">LH 130%</span>
+      </div>
+      <span class="abs" id="s7grip" style="right:-16px;bottom:-16px;width:30px;height:30px;border-radius:6px;background:#fff;border:3px solid #B8A0F8"></span>
+    </div>
+  </div>
+
+  <!-- ═══ S8 axis (dark) ═══ -->
+  <div class="sc" id="s8">
+    <div class="abs" id="s8ax" style="left:539px;top:280px;width:2px;height:680px;transform-origin:50% 0;background:repeating-linear-gradient(180deg,rgba(184,160,248,.6) 0 14px,transparent 14px 26px)"></div>
+    <div class="abs" id="s8sym" style="left:72px;top:290px;font:500 22px var(--mono);letter-spacing:.18em;color:#A99BC9">SYMMETRY</div>
+    <div class="hl" style="top:430px">
+      <div id="s8l1" style="font-size:130px;font-weight:500">Center it</div>
+      <div id="s8l2" style="font-size:104px;font-weight:400;margin-top:30px">for <span class="pill-img" id="s8p1" style="background-image:url(assets/arcs.jpg)"></span> calm.</div>
+    </div>
+    <div class="abs" id="s8div" style="left:72px;right:72px;top:1000px;height:3px;background:linear-gradient(90deg,transparent,#B8A0F8,transparent);box-shadow:0 0 30px #B8A0F8"></div>
+    <div class="abs" id="s8asym" style="right:72px;top:1040px;font:500 22px var(--mono);letter-spacing:.18em;color:#A99BC9">ASYMMETRY</div>
+    <div class="abs" id="s8diag" style="left:90px;top:1100px;width:1058px;height:3px;transform-origin:0 50%;background:repeating-linear-gradient(90deg,rgba(184,160,248,.5) 0 14px,transparent 14px 26px)"></div>
+    <div class="abs" id="s8off" style="left:72px;top:1090px;font-size:156px;font-weight:700;letter-spacing:-.035em;line-height:1;z-index:3">Offset it</div>
+    <div class="abs" id="s8en" style="left:72px;top:1270px;font-size:92px;font-weight:400;letter-spacing:-.02em;z-index:3"><span class="bw">for</span> <span class="bw"><span class="pill-img" style="background-image:url(assets/spheres.jpg);width:210px;height:100px"></span></span> <span class="bw">energy.</span></div>
+    <div class="abs" id="s8cw" style="right:72px;top:1500px;text-align:right;font-size:36px;color:#C9B8FF;line-height:1.3;z-index:3">then counter<br>the heavy side <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#B8A0F8;box-shadow:0 0 18px #B8A0F8;vertical-align:2px;margin-left:6px"></span></div>
+  </div>
+
+  <!-- ═══ S9 card fan (mesh) ═══ -->
+  <div class="sc" id="s9">
+    <div class="abs" style="left:72px;top:250px;z-index:6;letter-spacing:-.03em;line-height:1.02">
+      <div><span class="bw" id="s9a" style="font-size:128px;font-weight:200">Nudge.</span></div>
+      <div style="margin-left:110px"><span class="bw" id="s9b" style="font-size:128px;font-weight:500">Step back.</span></div>
+      <div style="margin-left:30px"><span class="bw" id="s9c" style="font-size:128px;font-weight:900">Nudge again.</span></div>
+    </div>
+    <div class="abs" id="fan" style="left:0;top:780px;width:1080px;height:800px;perspective:1600px;perspective-origin:60% 40%"></div>
+  </div>
+
+  <!-- ═══ S10 payoff (dark neon) ═══ -->
+  <div class="sc" id="s10">
+    <div class="hl" id="s10h" style="top:270px;font-size:58px;font-weight:500"><span class="bw">Same</span> <span class="bw">words.</span> <span class="bw">Same</span> <span class="bw">space.</span></div>
+    <div class="hl" id="s10n" style="top:350px;font-size:118px;font-weight:700;filter:drop-shadow(0 0 26px rgba(184,160,248,.6))"><span class="bw grad">Now</span> <span class="bw grad">it</span> <span class="bw grad">sits</span> <span class="bw grad">still.</span></div>
+    <div class="poster" id="s10p" style="left:110px;top:560px;width:860px;height:940px;overflow:hidden">
+      <div style="inset:0">
+        <div class="img-blend" style="right:-60px;bottom:120px;width:420px;height:400px;background-image:url(assets/swirl.jpg);opacity:.9"></div>
+        <div class="p-eye" style="position:absolute;left:84px;top:96px">Design workshop</div>
+        <div style="position:absolute;left:84px;top:160px;font-size:82px;font-weight:600;line-height:1.12;letter-spacing:-.02em">Build a clear<br><span style="color:#C9B8FF">visual identity.</span></div>
+        <div style="position:absolute;left:84px;top:380px;width:520px;font-size:28px;line-height:1.45;color:#A99BC9">Two hours on type pairing, grids and spacing.</div>
+        <div class="p-meta" style="position:absolute;left:84px;bottom:200px">Saturday · 10:00 AM</div>
+        <div class="p-cta" style="position:absolute;left:84px;bottom:84px">Book your seat</div>
+      </div>
+      <div id="s10before" style="inset:0;background:#120A2E;clip-path:inset(0 100% 0 0)">
+        <div class="p-eye" style="position:absolute;left:40px;top:40px">Design workshop</div>
+        <div style="position:absolute;left:34px;top:120px;font-size:150px;font-weight:900;line-height:.84;text-transform:uppercase;letter-spacing:-.03em;transform:rotate(8deg);transform-origin:left top;white-space:nowrap">Build<br>a clear<br>visual<br>identity</div>
+      </div>
+      <div id="s10line" style="left:0;top:0;bottom:0;width:4px;margin-left:-2px;background:#fff;box-shadow:0 0 24px #B8A0F8;opacity:0"></div>
+      <div id="s10knob" style="left:0;top:50%;width:88px;height:88px;margin:-44px 0 0 -44px;border-radius:50%;background:#fff;color:#120829;display:grid;place-items:center;font:700 30px var(--mono);box-shadow:0 0 0 8px rgba(184,160,248,.35),0 0 40px #B8A0F8;opacity:0">‹ ›</div>
+    </div>
+    <div class="center" style="top:1540px"><div class="tilt warn" id="t10" style="opacity:0"><span class="dot"></span><span id="t10v">14.0°</span></div></div>
+    <div class="fill" id="conf" style="z-index:8"></div>
+  </div>
+
+  <!-- ═══ S11 takeaway ═══ -->
+  <div class="sc" id="s11">
+    <div id="s11a">
+      <div class="hl ink" style="top:360px;font-size:128px;font-weight:600"><span class="bw">Type</span> <span class="bw"><img src="assets/cut/cube.png" alt="" style="height:118px;vertical-align:-14px"></span> <span class="bw">has</span><br><span class="bw"><img src="assets/cut/ring.png" alt="" style="height:150px;vertical-align:-30px"></span> <span class="bw">weight.</span></div>
+      <div class="hl" style="top:780px;font-size:116px;font-weight:700"><span class="bw gradInk">Design</span> <span class="bw gradInk">with</span> <span class="bw gradInk">it.</span></div>
+      <div class="center" id="s11tg" style="top:1080px;display:flex;align-items:center;justify-content:center;gap:34px">
+        <span class="ink" style="font-size:56px;font-weight:600">Balance</span>
+        <span class="toggle" id="tgl"><span class="abs" style="inset:0;border-radius:999px;background:#E2DBF6"></span><span class="abs" id="tglon" style="inset:0;border-radius:999px;background:linear-gradient(90deg,#6B3BEA,#B8A0F8);opacity:0;box-shadow:0 0 50px rgba(107,59,234,.6)"></span><span class="k" id="tglk"></span></span>
+        <span class="abs" id="streak" style="left:620px;top:46px;width:420px;height:28px;border-radius:30px;background:linear-gradient(90deg,rgba(184,160,248,0),#B8A0F8 60%,#fff);filter:blur(6px);opacity:0;transform-origin:0 50%"></span>
+      </div>
+    </div>
+    <div id="s11b" style="opacity:0">
+      <div class="img-blend" id="s11img" style="left:40px;top:640px;width:1000px;height:640px;background-image:url(assets/beam.jpg)"></div>
+      <img id="s11heart" src="assets/cut/heart.png" alt="" class="abs" style="left:60px;top:420px;width:250px">
+      <img id="s11plus" src="assets/cut/plus.png" alt="" class="abs" style="left:800px;top:400px;width:200px">
+      <div class="center" style="top:1400px"><div class="glass" id="s11save" style="display:inline-flex;align-items:center;gap:22px;padding:30px 48px;border-radius:999px;white-space:nowrap;font-size:38px;font-weight:500">
+        <svg width="34" height="44" viewBox="0 0 34 44"><path id="s11bm" d="M3 3 H31 V41 L17 31 L3 41 Z" fill="none" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg><span id="s11txt">Save for your next layout</span></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ S12 end ═══ -->
+  <div class="sc" id="s12">
+    <div class="center" style="top:600px"><img id="s12av" src="assets/avatar.jpg" alt="" style="width:320px;height:320px;border-radius:50%;border:6px solid #fff;box-shadow:0 0 0 16px rgba(255,255,255,.18),0 30px 90px rgba(18,8,41,.45);object-fit:cover"></div>
+    <img id="s12plus" src="assets/cut/plus.png" alt="" class="abs" style="left:700px;top:560px;width:150px">
+    <div class="center" id="s12n" style="top:1000px;font-size:72px;font-weight:600;letter-spacing:-.02em"><span class="bw">Younsse Ezarini</span></div>
+    <div class="center" id="s12h" style="top:1095px;font-size:40px;color:#E9DDFF"><span class="bw">@younsse.ezarini</span></div>
+    <div class="center" id="s12f" style="top:1220px"><span class="bw" style="padding:28px 60px;border-radius:999px;background:#fff;color:#4818B8;font-size:40px;font-weight:700;box-shadow:0 20px 50px rgba(18,8,41,.3)">Follow for more</span></div>
+  </div>
+
+  </div><!-- /world -->
+
+  <div id="ripple"></div>
+  <div id="cur"><svg viewBox="0 0 40 48"><path d="M3 3 L3 39 L12.5 30 L19 45 L26 42 L19.5 27.5 L33 27.5 Z" fill="#B8A0F8" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg><span>Younsse</span></div>
+  <div id="wm"><img src="assets/avatar.jpg" alt=""><span>@younsse.ezarini</span></div>
+  <div id="black"></div>
+</div></div>
+
+<script>
+(function(){
+const BAR=240/105, BEAT=BAR/4, DUR=20*BAR, BURST=2*BAR;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const P=(t,a,b)=>clamp((t-a)/(b-a));
+const L=(a,b,k)=>a+(b-a)*k;
+const E={outExpo:x=>x>=1?1:1-Math.pow(2,-10*x),outCubic:x=>1-Math.pow(1-x,3),inCubic:x=>x*x*x,inQuad:x=>x*x,
+  inOutCubic:x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,outBack:x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);}};
+const spring=(x,z=.38,w=13)=>x<=0?0:1-Math.exp(-z*w*x)*Math.cos(w*Math.sqrt(1-z*z)*x);
+const settle=x=>x<=0?0:0.9*Math.exp(-x*5)*Math.sin(x*18);
+const $=id=>document.getElementById(id);
+const stage=$('stage');let VS=1;
+const f2=n=>n.toFixed(2);
+function T(el,x,y,s,r,o,b){
+  el.style.transform=`translate(${f2(x||0)}px,${f2(y||0)}px) rotate(${(r||0).toFixed(3)}deg) scale(${(s===undefined?1:s).toFixed(4)})`;
+  if(o!==undefined) el.style.opacity=clamp(o).toFixed(3);
+  el.style.filter=b>0.1?`blur(${b.toFixed(2)}px)`:'none';
+}
+function O(el,o){el.style.opacity=clamp(o).toFixed(3);}
+function C(el){const r=el.getBoundingClientRect(),s=stage.getBoundingClientRect();return {x:(r.left-s.left+r.width/2)/VS,y:(r.top-s.top+r.height/2)/VS};}
+// blur-in words: start big and blurred, settle sharp; leave the same way
+function BW(root,t,tin,tout,st){
+  const ws=root.classList.contains('bw')?[root]:root.querySelectorAll('.bw');
+  ws.forEach((w,i)=>{
+    const a=Array.isArray(tin)?(tin[i]!==undefined?tin[i]:tin[tin.length-1]+0.08*(i-tin.length+1)):tin+i*(st||0.08);
+    const k=E.outExpo(P(t,a,a+0.55));
+    let s=L(1.4,1,k),b=L(26,0,k),o=P(t,a,a+0.16),y=L(26,0,k);
+    if(tout!==undefined&&t>tout){const q=E.inCubic(P(t,tout+i*0.03,tout+i*0.03+0.26));b+=22*q;o*=1-q;s*=L(1,1.15,q);y-=30*q;}
+    w.style.transform=`translateY(${f2(y)}px) scale(${s.toFixed(4)})`;w.style.opacity=o.toFixed(3);w.style.filter=b>0.1?`blur(${b.toFixed(2)}px)`:'none';
+  });
+}
+function pop(el,t,a,out,base){const k=E.outBack(P(t,a,a+0.35));const x=out===undefined?0:E.inCubic(P(t,out,out+0.25));T(el,0,-20*x,L(base===undefined?0.2:base,1,k)*L(1,.8,x),0,P(t,a,a+0.12)*(1-x),8*x);}
+
+// scene windows (seconds)
+const WIN={s1:[0,3.95],s2:[3.15,4.75],s3:[4.5,9.2],s4:[8.95,13.72],s5:[13.55,18.3],s6:[18.15,22.9],s7:[22.86,27.45],s8:[27.2,32.05],s9:[31.85,34.32],s10:[34.15,38.9],s11:[38.75,43.45],s12:[43.3,DUR+1]};
+// grounds: [start, ground, crossfade]
+const GROUND=[[0,'light'],[3.3,'dark',0.5],[8.95,'mesh',0.25],[13.5,'dark',0.25],[18.1,'light',0.25],[23.95,'mesh',0.1],[27.25,'dark',0.25],[31.85,'mesh',0.2],[34.15,'dark',0.2],[38.7,'light',0.2],[40.52,'dark',0.12],[43.3,'mesh',0.25]];
+function ground(t){const cur={light:1,mesh:0,dark:0};
+  for(const [a,g,d] of GROUND){if(t<a) break;const k=d?E.inOutCubic(P(t,a,a+d)):1;for(const key in cur) cur[key]=L(cur[key],key===g?1:0,k);}
+  return cur;}
+
+// build: tumbling letters
+const UY=[0,0,3,8,16,28,46,72,106,150,204],UR=[0,0,1,3,6,10,15,22,31,42,56];
+$('s1unb').innerHTML='unbalanced.'.split('').map(c=>`<i class="ul" style="display:inline-block;font-style:normal">${c}</i>`).join('');
+const ULS=[...document.querySelectorAll('.ul')];
+// build: cascade cards
+const PC=[
+  {t:'Headline too heavy',bg:'linear-gradient(135deg,#2B1663,#170B3B)',obj:'sphere',w:290,x:540,y:-70,ic:['H1','B','A']},
+  {t:'Cramped spacing',bg:'linear-gradient(135deg,#5B33C9,#3A1C86)',obj:'trio',w:260,x:560,y:-40,ic:['↔','↕','⌗']},
+  {t:'Everything is bold',bg:'linear-gradient(135deg,#7A4FE0,#4E27B8)',obj:'cube',w:200,x:590,y:-30,ic:['B','B','B']},
+  {t:'No clear hero',bg:'linear-gradient(135deg,#A35BB8,#6C3AB0)',obj:'ring',w:280,x:540,y:-80,ic:['?','·','·']},
+  {t:'CTA gets lost',bg:'linear-gradient(135deg,#D2709F,#8A44B6)',obj:'swirl',w:300,x:520,y:-90,ic:['→','○','·']}];
+PC.forEach((c,i)=>{const d=document.createElement('div');d.className='pcard';
+  d.innerHTML=`<div class="pc-in" style="background:${c.bg}"><div class="pc-t">${c.t}<i></i></div><div class="pc-ic">${c.ic.map(s=>`<b>${s}</b>`).join('')}</div></div><img class="pc-obj" src="assets/cut/${c.obj}.png" alt="" style="left:${c.x}px;top:${c.y}px;width:${c.w}px">`;
+  $('pile').appendChild(d);c.el=d;c.img=d.querySelector('.pc-obj');});
+const PT=[0.05,0.47,0.89,1.31,1.73];
+// build: particles
+const DOTS=['#FFFFFF','#B8A0F8','#FF8FB8','#7B4DFF','#C9B8FF','#FF8FB8','#B8A0F8','#FFFFFF','#6B3BEA','#E9DDFF'].map((c,i)=>{const d=document.createElement('div');d.className='abs';
+  const sz=i<5?72:44;d.style.cssText=`left:0;top:0;width:${sz}px;height:${sz}px;margin:${-sz/2}px 0 0 ${-sz/2}px;border-radius:50%;background:radial-gradient(circle,#fff 0,${c} 35%,transparent 70%);box-shadow:0 0 60px 10px ${c}`;
+  $('s2').appendChild(d);return {el:d,a0:i*0.628+(i>4?0.3:0),r0:i<5?560:700};});
+// build: coins
+const COINS=[...Array(6)].map((_,i)=>{const im=document.createElement('img');im.src='assets/cut/'+(i%2?'sphere':'cube')+'.png';im.className='abs';im.alt='';im.style.cssText=`left:0;top:0;width:${70+i*8}px`;$('coins').appendChild(im);return im;});
+// build: fan cards
+const FAN=[{tag:'v1 · 14°',tc:'#FF5A9E',r:14},{tag:'v2 · 9°',tc:'#FF5A9E',r:9},{tag:'v3 · 5°',tc:'#7B4DFF',r:5},{tag:'v4 · 2°',tc:'#7B4DFF',r:2},{tag:'v5 · 0.0° ✓',tc:'#fff',r:0,main:true}];
+FAN.forEach(c=>{const d=document.createElement('div');d.className='fan-card';
+  if(c.main) d.style.cssText='background:linear-gradient(180deg,#2A1466,#120A2E);color:#fff;box-shadow:0 0 0 3px #B8A0F8,0 0 90px rgba(184,160,248,.6),0 40px 80px rgba(18,8,41,.4)';
+  const body=c.main?`<div style="margin-top:34px;font:500 16px var(--mono);letter-spacing:.18em;color:#C9B8FF">DESIGN WORKSHOP</div><div style="margin-top:18px;font-size:44px;font-weight:600;line-height:1.15;letter-spacing:-.02em">Build a clear<br><span style="color:#C9B8FF">visual identity.</span></div><div style="margin-top:20px;font-size:19px;color:#A99BC9;line-height:1.45">Two hours on type pairing, grids and spacing.</div><div style="position:absolute;left:30px;bottom:34px;padding:12px 22px;border-radius:999px;background:linear-gradient(90deg,#6B3BEA,#B8A0F8);font-size:19px;font-weight:600">Book your seat</div>`
+    :`<div style="margin-top:40px;transform:rotate(${c.r}deg);transform-origin:0 0"><div style="height:${30+c.r*2}px;width:${230+c.r*6}px;border-radius:8px;background:#120829;margin-bottom:12px"></div><div style="height:${30+c.r*2}px;width:${190+c.r*8}px;border-radius:8px;background:#120829;margin-bottom:12px"></div><div style="height:16px;width:180px;border-radius:8px;background:#C9C1E4"></div></div><div style="position:absolute;left:30px;bottom:34px;width:140px;height:44px;border-radius:999px;background:#6B3BEA;transform:translateX(${c.r*8}px)"></div>`;
+  d.innerHTML=`<span class="tag" style="background:${c.main?'rgba(184,160,248,.25)':'#F3EFFF'};color:${c.tc}">${c.tag}</span>${body}`;
+  $('fan').appendChild(d);c.el=d;});
+// build: confetti (chrome bits + neon streaks)
+const STREAK=['#B8A0F8','#FF8FB8','#FFFFFF'];
+const CONF=[...Array(16)].map((_,i)=>{let el;
+  if(i%3===0){const c=STREAK[(i/3)%3];el=document.createElement('div');el.style.cssText=`width:16px;height:${90+i*4}px;border-radius:20px;background:${c};box-shadow:0 0 24px ${c}`;}
+  else{el=document.createElement('img');el.alt='';el.src='assets/cut/'+['cube','trio','ring','sphere','plus','heart'][i%6]+'.png';el.style.width=(60+(i*37)%70)+'px';}
+  el.className='conf';$('conf').appendChild(el);
+  const a=-Math.PI/2+((i/15)-0.5)*2.6,sp=1300+((i*53)%9)*90;
+  return {el,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,w:((i%2)?1:-1)*(200+i*25)};});
+
+// sound cues for the mixer
+const SFX=[];const cue=(t,type,len)=>SFX.push({t:+t.toFixed(3),type,len:len||0});
+PT.forEach(a=>{cue(a,'swish',0.35);cue(a+0.25,'pop');});cue(1.45,'squeak',0.3);cue(2.0,'slide',0.9);
+cue(3.2,'hit');cue(3.2,'whoosh',0.6);cue(3.6,'riser',0.97);cue(BURST,'thunk');cue(BURST,'shimmer',0.9);cue(4.75,'swish',0.4);cue(5.714,'thunk');
+cue(7.1,'ping');cue(7.6,'ping');cue(8.35,'click');cue(8.85,'whoosh',0.4);
+cue(9.0,'swish',0.4);cue(9.65,'pop');cue(10.3,'click');cue(10.4,'stretch',1.0);[11.9,12.2,12.5,12.8].forEach(x=>cue(x,'tick'));cue(13.4,'whoosh',0.35);
+cue(13.7,'swish',0.4);cue(15.05,'click');cue(15.1,'whir',1.4);cue(16.55,'lock');cue(16.6,'shimmer',0.7);cue(18.0,'whoosh',0.35);
+cue(19.4,'click');cue(19.5,'click');cue(20.15,'tap');cue(20.2,'shimmer',0.7);cue(20.6,'pop');cue(22.6,'swish',0.3);
+for(let k=0;k<15;k++) cue(22.95+k*0.06,'key');cue(24.0,'slam');cue(24.0,'whoosh',0.8);cue(25.35,'swish',0.4);cue(25.5,'click');cue(26.0,'swell',1.0);[26.0,26.2,26.4].forEach(x=>cue(x,'tick'));cue(27.25,'whoosh',0.35);
+cue(27.45,'swish',0.4);cue(29.6,'slam');cue(30.55,'tick');cue(31.7,'whoosh',0.4);
+[0,BEAT,2*BEAT].forEach(x=>cue(32.0+x,'hit'));FAN.forEach((_,i)=>cue(31.95+i*0.34,'swish',0.3));cue(34.0,'whoosh',0.4);
+cue(34.8,'swish',0.8);cue(35.9,'swish',1.0);cue(36.9,'ding');cue(37.0,'pop');cue(37.0,'shimmer',1.0);
+[38.95,39.1,39.25,39.4,39.55].forEach(x=>cue(x,'pop'));cue(40.2,'click');cue(40.22,'lock');cue(40.25,'swish',0.35);cue(40.6,'thunk');cue(40.6,'shimmer',0.9);cue(41.0,'pop');cue(41.15,'pop');cue(42.3,'click');cue(42.32,'pop');
+cue(43.45,'pop');cue(44.0,'ding');
+window.SFX=SFX;window.DUR=DUR;window.BAR=BAR;window.GAPS=[[22.86,24.0]];
+
+const wAt=t=>t<15.1?900:L(900,200,E.inOutCubic(P(t,15.1,16.5)));
+const blob=(id,x,y,s,c)=>{$(id).style.cssText=`left:${f2(x)}px;top:${f2(y)}px;width:${s}px;height:${s}px;background:radial-gradient(closest-side,${c},transparent)`;};
+
+function render(t){
+  t=clamp(t,0,DUR-1e-6);
+  for(const k in WIN) $(k).style.display=(t>=WIN[k][0]&&t<WIN[k][1])?'block':'none';
+  let cur=null,click=-1,shake=0;
+
+  // grounds
+  const g=ground(t);O($('bgMesh'),g.mesh);O($('bgLight'),g.light);
+  const mt=t*0.35;
+  blob('mb1',-150+120*Math.sin(mt),200+90*Math.cos(mt*1.3),1200,'rgba(255,143,184,.85)');
+  blob('mb2',500+160*Math.cos(mt*.8),900+140*Math.sin(mt),1300,'rgba(184,160,248,.9)');
+  blob('mb3',-300+100*Math.sin(mt*1.1),1300+120*Math.cos(mt*.9),1200,'rgba(42,15,122,.9)');
+  blob('mb4',600+90*Math.sin(mt*1.4),-200+90*Math.cos(mt),900,'rgba(245,242,255,.55)');
+  blob('lb1',-200+80*Math.sin(mt),-100+60*Math.cos(mt),1100,'rgba(201,184,255,.55)');
+  blob('lb2',500+90*Math.cos(mt*.9),1100+80*Math.sin(mt),1200,'rgba(255,190,220,.4)');
+  blob('lb3',300+60*Math.sin(mt*1.2),500,900,'rgba(233,221,255,.6)');
+  const wl=g.light;$('wm').style.color=`rgb(${L(255,18,wl)|0},${L(255,8,wl)|0},${L(255,41,wl)|0})`;O($('wm'),1-P(t,43.2,43.5));
+
+  // rays + bloom (two bursts)
+  let rays=0,raysS=1,bloom=0,bloomS=1,rc={x:540,y:1180};
+  if(t<9.2){const b=BURST;raysS=L(0.08,1,E.outExpo(P(t,b-0.05,b+0.6)));rays=P(t,b-0.05,b+0.1)*(1-0.45*P(t,6.3,8.0))*(1-P(t,8.85,9.1));
+    bloom=t<b?E.inQuad(P(t,4.35,b)):L(1,0.3,E.outCubic(P(t,b,b+1.2)))*(1-P(t,8.0,9.0));bloomS=t<b?L(0.05,0.4,P(t,4.35,b)):L(0.4,1.3,E.outExpo(P(t,b,b+0.7)));}
+  else if(t>40.4&&t<43.5){const b=40.6;rc={x:540,y:960};raysS=L(0.08,1,E.outExpo(P(t,b-0.05,b+0.6)));rays=P(t,b-0.05,b+0.1)*(1-0.4*P(t,41.4,42.4))*(1-P(t,43.15,43.4));
+    bloom=t<b?E.inQuad(P(t,40.45,b)):L(1,0.25,E.outCubic(P(t,b,b+1.0)))*(1-P(t,43.1,43.4));bloomS=L(0.4,1.3,E.outExpo(P(t,b,b+0.7)));}
+  const R=$('rays');R.style.left=rc.x+'px';R.style.top=rc.y+'px';R.style.transform=`rotate(${(t*9).toFixed(2)}deg) scale(${raysS.toFixed(4)})`;O(R,rays);
+  const B=$('bloom');B.style.left=rc.x+'px';B.style.top=rc.y+'px';B.style.transform=`scale(${bloomS.toFixed(4)})`;O(B,bloom);
+  O($('black'),P(t,45.25,DUR));
+
+  // ── S1 cascade
+  if(t<WIN.s1[1]){
+    BW($('s1a'),t,[-0.4,0.18,0.42,0.6,0.78],1.95);
+    $('strike').style.transform=`scaleX(${E.outCubic(P(t,1.45,1.75)).toFixed(3)})`;
+    BW($('s1b').firstElementChild,t,[2.05],3.15);
+    const ex=E.inCubic(P(t,3.15,3.45));
+    ULS.forEach((el,i)=>{const k=E.outExpo(P(t,2.15+i*.03,2.6+i*.03)),q=E.outBack(P(t,2.55+i*.035,3.2+i*.035)),b=(1-k)*20+ex*20;
+      el.style.transform=`translateY(${f2((1-k)*60+UY[i]*q-60*ex)}px) rotate(${f2(UR[i]*q)}deg) scale(${L(1.3,1,k).toFixed(3)})`;el.style.opacity=(k*(1-ex)).toFixed(3);el.style.filter=b>0.1?`blur(${f2(b)}px)`:'none';});
+    let arrived=0;PT.forEach((a,i)=>{if(i>0)arrived+=E.outCubic(P(t,a,a+0.5));});
+    const shift=90*(4-arrived),tip=E.inOutCubic(P(t,2.0,2.9)),e=E.inCubic(P(t,3.2,3.75));
+    PC.forEach((c,i)=>{
+      const a=PT[i],k=E.outExpo(P(t,a,a+0.6)),ang=[-2.2,-0.6,2.9,0.4,1.9][i];
+      let x=L(820,0,k)+(60+i*35)*tip,y=520+i*180+shift+L(1000,0,k)+i*10*tip,rz=L(-34,-9,k)+9*tip,s=L(0.92,1,k),o=P(t,a,a+0.05);
+      x+=Math.cos(ang)*1100*e;y+=Math.sin(ang)*1100*e;rz+=[-200,160,-140,180,-160][i]*e;s*=L(1,0.35,e);o*=1-P(t,3.5,3.75);
+      c.el.style.transform=`translate(${f2(x)}px,${f2(y)}px) rotateX(14deg) rotateY(-16deg) rotateZ(${f2(rz)}deg) scale(${s.toFixed(4)})`;
+      c.el.style.opacity=o.toFixed(3);c.el.style.zIndex=10+i;
+      const ok=E.outBack(P(t,a+0.22,a+0.6));c.img.style.transform=`translateZ(60px) scale(${L(0,1,ok).toFixed(4)}) rotate(${f2(L(-25,0,ok)+4*Math.sin(t*3+i))}deg)`;
+    });
+  }
+  // ── S2 particles converge into the burst
+  if(t>=WIN.s2[0]&&t<WIN.s2[1]){
+    DOTS.forEach((d,i)=>{const r=L(d.r0,0,E.inCubic(P(t,3.6,BURST-0.02))),a=d.a0+2.6*(t-3.5)+(i%2?0.4:0);
+      T(d.el,540+Math.cos(a)*r,1180+Math.sin(a)*r*0.85,L(0.4,1,P(t,3.45,3.7))*(i<5?1:0.8),0,P(t,3.4,3.7)*(1-P(t,BURST-0.05,BURST+0.05)));});
+  }
+  // ── S3 beam reveal + rule
+  if(t>=WIN.s3[0]&&t<WIN.s3[1]){
+    const k=E.outBack(P(t,4.72,5.3)),wp=E.inCubic(P(t,8.85,9.14));
+    const beam=$('beam3');beam.style.transform=`translateX(${f2(-1300*wp)}px) rotateY(${f2(L(95,0,k))}deg) scale(${L(0.5,1,k).toFixed(4)})`;O(beam,P(t,4.7,4.85));
+    const tilt=t<5.714?0:-12*spring(t-5.714,.32,14);$('bar3').style.transform=`rotate(${tilt.toFixed(3)}deg)`;
+    T($('b3w'),0,L(-760,0,E.inCubic(P(t,5.35,5.714))),1,0,P(t,5.35,5.45));
+    T($('b3r'),0,0,1,0,P(t,4.9,5.1));
+    if(t>5.714&&t<6.3) shake=14*Math.exp(-(t-5.714)*12)*Math.sin((t-5.714)*60);
+    BW($('s3h'),t,[5.8,5.9,6.15,6.3],8.75);T($('s3h'),-1300*wp,0,1,0,1);
+    pop($('g1'),t,7.1,8.6);pop($('g2'),t,7.6,8.6);
+    O($('t3'),P(t,6.0,6.2)*(1-P(t,8.7,8.9)));$('t3v').textContent=`Tilt ${Math.abs(tilt).toFixed(1)}°`;
+    T($('b3sel'),0,0,L(1.08,1,E.outCubic(P(t,8.35,8.5))),0,t>=8.35?1:0);
+    if(t>=7.8&&t<9.0){const h=C($('b3t')),k1=E.outCubic(P(t,7.8,8.3));cur={x:L(1000,h.x+40,k1),y:L(1600,h.y+10,k1),o:P(t,7.8,7.95)*(1-P(t,8.7,8.9))};if(t>=8.35&&t<8.9) click=8.35;}
+  }
+  // ── S4 size
+  if(t>=WIN.s4[0]&&t<WIN.s4[1]){
+    const wi=E.outExpo(P(t,9.0,9.5)),ex=E.inCubic(P(t,13.4,13.7));
+    T($('s4'),0,0,L(1,1.18,ex),0,1-ex,24*ex);
+    const w=$('s4w'),size=L(300,128,E.outCubic(P(t,10.4,11.4)));w.style.fontSize=f2(size)+'px';T(w,L(1300,0,wi),0,1,0,1);
+    $('s4dim').textContent=`${Math.round(size)} px`;O($('s4dim'),P(t,10.4,10.5));
+    T($('s4sel'),0,0,L(1.08,1,E.outCubic(P(t,9.35,9.5))),0,t>=9.35?1:0);
+    const bk=E.outBack(P(t,9.65,10.0));$('s4badge').style.transform=`scale(${L(0,1,bk).toFixed(4)}) rotate(${f2(L(-40,0,bk)+5*Math.sin(t*3))}deg) translateY(${f2(6*Math.sin(t*2.4))}px)`;
+    pop($('s4c'),t,9.2,undefined,0.6);BW($('s4h'),t,9.3,undefined,0.07);BW($('s4p'),t,[10.95,11.05,11.15]);
+    document.querySelectorAll('.lad').forEach((el,i)=>pop(el,t,11.9+i*0.3));
+    const br=C($('s4br')),k1=E.outCubic(P(t,9.8,10.25)),k2=E.inOutCubic(P(t,11.6,12.1));
+    if(t>=9.8){cur={x:L(L(1020,br.x,k1),960,k2),y:L(L(1500,br.y,k1),1380,k2),o:P(t,9.8,9.95)*(1-P(t,12.6,12.9))};if(t>=10.3&&t<10.8) click=10.3;}
+  }
+  // ── S5 weight
+  if(t>=WIN.s5[0]&&t<WIN.s5[1]){
+    T($('s5'),0,-1500*E.inCubic(P(t,18.0,18.29)),1,0,1);
+    const ri=E.outBack(P(t,13.7,14.25)),cam=E.inOutCubic(P(t,13.7,18.3));
+    const beam=$('beam5');beam.style.transform=`translateY(${f2(L(500,0,ri))}px) rotateX(${f2(L(18,6,cam))}deg) rotateY(${f2(L(-18,12,cam))}deg)`;O(beam,P(t,13.65,13.8));
+    const w=wAt(t);$('b5lt').style.fontWeight=w.toFixed(1);
+    const TW=[900,700,500,300];document.querySelectorAll('#b5l .trail').forEach((el,j)=>O(el,clamp((TW[j]-w)/80)));
+    const tilt=t<15.1?-10*spring(t-14.0,.4,12):-10*(w-200)/700+settle(t-16.5);$('bar5').style.transform=`rotate(${tilt.toFixed(3)}deg)`;
+    const at=Math.abs(tilt),tc=$('t5');tc.className='tilt'+(at>6?' warn':at<0.3?' ok':'');$('t5v').textContent=`Tilt ${at.toFixed(1)}°`+(at<0.3?' ✓':'');O(tc,P(t,14.2,14.4));
+    BW($('s5h').children[0],t,13.85);BW($('s5h').children[1],t,15.5);
+    const sk=E.outCubic(P(t,14.3,14.7));T($('s5sl'),0,30*(1-sk),1,0,sk);
+    const pct=(w-100)/8;$('s5k').style.left=f2(pct)+'%';$('s5f').style.width=f2(pct)+'%';$('s5v').textContent=t<15.1?'900':`900 → ${Math.round(w)}`;
+    O($('s5eq'),P(t,16.9,17.3));
+    const kn=C($('s5k')),k1=E.outCubic(P(t,14.6,15.0)),k2=E.inOutCubic(P(t,16.8,17.3));
+    if(t>=14.6){cur={x:L(L(1000,kn.x,k1),940,k2),y:L(L(1300,kn.y,k1),1000,k2),o:P(t,14.6,14.75)*(1-P(t,17.4,17.7))};if(t>=15.05&&t<15.5) click=15.05;}
+    COINS.forEach((c,i)=>{const a=16.6+i*0.07,q=P(t,a,a+0.75);T(c,L(-160,1240,q),1150-420*Math.sin(Math.PI*q)-i*40+i*i*8,1,q*540*(i%2?1:-1),q>0&&q<1?1:0);});
+  }
+  // ── S6 color
+  if(t>=WIN.s6[0]&&t<WIN.s6[1]){
+    const ex=E.inCubic(P(t,22.6,22.86));T($('s6'),0,0,L(1,1.12,ex),0,1-ex,22*ex);
+    BW($('s6h'),t,18.4,undefined,0.09);
+    const pk=E.outExpo(P(t,18.45,19.0));T($('s6para'),0,40*(1-pk),1,0,L(1,0.5,P(t,20.2,20.7))*P(t,18.45,18.6),18*(1-pk));
+    T($('s6sel'),0,0,L(1.1,1,E.outCubic(P(t,19.5,19.65))),0,t>=19.5?1:0);
+    $('s6w').style.color=t>=20.2?'#7B4DFF':'';
+    const sk=E.outBack(P(t,19.55,19.95));T($('s6sw'),0,40*(1-sk),L(.85,1,sk),0,P(t,19.55,19.7));
+    T($('sw4'),0,0,L(1,1.25,E.outBack(P(t,20.15,20.4))),0,1);O($('sw4r'),P(t,20.15,20.25));
+    const src=C($('s6w')),q=E.outExpo(P(t,20.2,20.75));
+    T($('s6sat'),L(src.x-540,0,q),L(src.y-600,0,q),L(40/150,1,q),0,t>=20.2?1:0);
+    const rk=E.outBack(P(t,20.6,20.95));$('s6ring').style.transform=`scale(${L(0,1,rk).toFixed(4)}) rotate(${f2(L(-60,0,rk)+6*Math.sin(t*2.6))}deg)`;
+    BW($('s6p'),t,[20.85,20.95,21.15,21.25]);
+    const w4=C($('sw4')),ww=C($('s6w'));
+    const k1=E.outCubic(P(t,18.95,19.35)),k2=E.inOutCubic(P(t,19.7,20.1)),k3=E.inOutCubic(P(t,20.5,20.9));
+    if(t>=18.95){cur={x:L(L(L(1000,ww.x+60,k1),w4.x+8,k2),900,k3),y:L(L(L(1500,ww.y+20,k1),w4.y+8,k2),1300,k3),o:P(t,18.95,19.1)*(1-P(t,21.6,21.9))};if(t>=19.4&&t<19.9) click=19.4;if(t>=20.15&&t<20.6) click=20.15;}
+  }
+  // ── S7 space
+  if(t>=WIN.s7[0]&&t<WIN.s7[1]){
+    const full='Space is weight',n=Math.floor(clamp((t-22.95)/0.06,0,full.length));$('s7tt').textContent=full.slice(0,n);
+    O($('s7car'),(t<23.9&&(n<full.length&&t>=22.95||Math.floor(t*4)%2===0))?1:0);
+    const te=E.inCubic(P(t,23.85,24.0));T($('s7type'),0,-30*te,1,0,1-te,16*te);
+    const wk=P(t,24.0,25.1),bo=E.inCubic(P(t,25.25,25.55)),big=$('s7big');
+    big.style.letterSpacing=L(-0.06,0.95,E.inOutCubic(wk)).toFixed(4)+'em';T(big,L(620,-260,E.outCubic(wk)),-120*bo,1,0,P(t,24.0,24.06)*(1-bo),20*bo);
+    if(t>24.0&&t<24.5) shake=12*Math.exp(-(t-24.0)*10)*Math.sin((t-24.0)*55);
+    BW($('s7sub'),t,[24.55,24.65,24.75],25.25);
+    BW($('s7room'),t,[25.85,25.95,26.05],27.1);
+    const pk=E.outExpo(P(t,25.35,25.85)),px=E.inCubic(P(t,27.25,27.45));
+    T($('s7p'),L(900,0,pk),1600*px,1,L(8,0,pk),P(t,25.35,25.45));
+    const gg=E.inOutCubic(P(t,26.0,27.0)),m=L(28,96,gg),lh=L(1.0,1.3,gg),ht=L(64,166,gg),bt=L(232,418,gg);
+    const st=(id,o)=>{const s=$(id).style;for(const k in o) s[k]=o[k];};
+    st('s7e',{left:m+'px',top:m+'px'});st('s7t',{left:m+'px',top:ht+'px',lineHeight:lh,letterSpacing:L(-.045,-.02,gg)+'em'});st('s7b',{left:m+'px',top:bt+'px'});
+    st('s7m',{left:m+'px',bottom:m+'px'});st('s7cta',{right:m+'px',bottom:L(20,76,gg)+'px'});
+    O($('s7red'),P(t,25.8,26.0));
+    const hb=ht+2*78*lh,gap=bt-hb;
+    st('rTop',{height:m+'px'});st('rTopL',{top:(m/2-18)+'px'});$('rTopL').textContent=Math.round(m);
+    st('rLeft',{top:(m+12)+'px',width:m+'px'});
+    st('rGap',{top:hb+'px',height:gap+'px'});st('rGapL',{top:(hb+gap/2-18)+'px'});$('rGapL').textContent=Math.round(gap);
+    st('rLH',{top:(ht+10)+'px',height:(2*78*lh-20)+'px'});st('rLHL',{top:(ht+78*lh-18)+'px'});$('rLHL').textContent=`LH ${Math.round(lh*100)}%`;
+    O($('s7hatch'),P(t,26.85,27.05));
+    if(t>=25.35&&t<27.3){const gp=C($('s7grip'));cur={x:gp.x+4,y:gp.y+4,o:P(t,25.35,25.5)*(1-P(t,26.9,27.1))};if(t>=25.5&&t<26.0) click=25.5;}
+  }
+  // ── S8 axis
+  if(t>=WIN.s8[0]&&t<WIN.s8[1]){
+    const lt=t-27.43,din=E.outExpo(P(t,27.25,27.65)),ex=E.inCubic(P(t,31.7,32.0));
+    T($('s8'),900*ex,L(-1600,0,din),L(1,.35,ex),0,1-ex,10*ex);
+    $('s8ax').style.transform=`scaleY(${E.outCubic(P(lt,0.0,0.45)).toFixed(3)})`;
+    O($('s8sym'),P(lt,0.2,0.4));O($('s8asym'),P(lt,1.6,1.8));
+    const c1=50*(1-E.outExpo(P(lt,0.15,0.75))),c2=50*(1-E.outExpo(P(lt,0.55,1.15)));
+    $('s8l1').style.clipPath=`inset(-20% ${f2(c1)}% -20% ${f2(c1)}%)`;$('s8l2').style.clipPath=`inset(-20% ${f2(c2)}% -20% ${f2(c2)}%)`;
+    T($('s8p1'),0,0,L(.5,1,E.outBack(P(lt,0.9,1.25))),0,1);
+    $('s8div').style.transform=`scaleX(${E.outCubic(P(lt,1.35,1.75)).toFixed(3)})`;
+    $('s8diag').style.transform=`rotate(30.68deg) scaleX(${E.outCubic(P(lt,1.8,2.3)).toFixed(3)})`;
+    const sl=E.outExpo(P(lt,2.0,2.4));$('s8off').style.transform=`translateX(${f2(L(-1000,0,sl))}px) skewX(${f2(L(-16,0,sl))}deg)`;
+    BW($('s8en'),lt,[2.45,2.55,2.7]);
+    const cw=E.outCubic(P(lt,3.1,3.5));T($('s8cw'),340*(1-cw),0,1,0,cw);
+    if(lt>2.2&&lt<2.8) shake=10*Math.exp(-(lt-2.2)*12)*Math.sin((lt-2.2)*60);
+  }
+  // ── S9 card fan
+  if(t>=WIN.s9[0]&&t<WIN.s9[1]){
+    [['s9a',32.0],['s9b',32.0+BEAT],['s9c',32.0+2*BEAT]].forEach(([id,a])=>BW($(id),t,a,34.0));
+    const zx=E.inCubic(P(t,34.0,34.3));
+    FAN.forEach((c,i)=>{const a=31.95+i*0.34,k=E.outExpo(P(t,a,a+0.5));
+      const ry=c.main?L(-30,-12,E.inOutCubic(P(t,33.6,34.0))):-30;
+      c.el.style.transform=`translate(${f2(40+i*150+L(1100,0,k))}px,${f2(i*34+L(120,0,k))}px) rotateY(${f2(ry)}deg) rotateZ(${f2(L(10,0,k))}deg)`;c.el.style.opacity=P(t,a,a+0.05).toFixed(3);c.el.style.zIndex=i;});
+    const fan=$('fan');fan.style.transform=`scale(${L(1,2.4,zx).toFixed(4)})`;fan.style.transformOrigin='78% 40%';O(fan,1-P(t,34.15,34.3));fan.style.filter=zx>0.05?`blur(${f2(14*zx)}px)`:'none';
+  }
+  // ── S10 payoff
+  if(t>=WIN.s10[0]&&t<WIN.s10[1]){
+    const ex=E.inCubic(P(t,38.6,38.86));T($('s10'),0,0,L(1,1.12,ex),0,1-ex,22*ex);
+    BW($('s10h'),t,[34.4,34.5,34.75,34.85]);BW($('s10n'),t,[36.0,36.1,36.2,36.3]);
+    const k=E.outExpo(P(t,34.2,34.7));T($('s10p'),0,80*(1-k),L(.6,1,k),0,P(t,34.2,34.3),16*(1-k));
+    const cut=t<35.9?100*E.inOutCubic(P(t,34.8,35.6)):L(100,30,E.inOutCubic(P(t,35.9,36.9)));
+    $('s10before').style.clipPath=`inset(0 ${f2(100-cut)}% 0 0)`;
+    const hv=(cut>0.5&&cut<99.5)||t>=36.9?1:0;$('s10line').style.left=$('s10knob').style.left=f2(cut)+'%';O($('s10line'),hv);O($('s10knob'),hv);
+    const v=t<35.9?14:14*clamp((cut-30)/70),tl=$('t10');tl.className='tilt'+(v<0.05?' ok':' warn');$('t10v').textContent=v<0.05?'0.0° ✓ Balanced':`${v.toFixed(1)}°`;T(tl,0,0,1,0,P(t,34.8,35.0));
+    CONF.forEach(c=>{const tau=t-37.0;if(tau<0||tau>1.8){O(c.el,0);return;}T(c.el,540+c.vx*tau*0.55,1080+c.vy*tau*0.55+0.5*2600*tau*tau*0.55,1,c.w*tau,1-P(tau,1.2,1.8));});
+  }
+  // ── S11 takeaway
+  if(t>=WIN.s11[0]&&t<WIN.s11[1]){
+    const a=$('s11a'),ax=E.inCubic(P(t,40.45,40.62));T(a,0,0,L(1,1.15,ax),0,1-ax,20*ax);
+    BW(a.children[0],t,[38.95,39.1,39.25,39.4,39.55]);BW(a.children[1],t,[39.75,39.85,39.95]);
+    const tg=E.outBack(P(t,39.7,40.05));T($('s11tg'),0,40*(1-tg),L(.8,1,tg),0,P(t,39.7,39.85));
+    $('tglk').style.transform=`translateX(${f2(100*E.outBack(P(t,40.2,40.4)))}px)`;O($('tglon'),P(t,40.2,40.3));
+    const sk=P(t,40.25,40.55);$('streak').style.transform=`translateX(${f2(200*sk)}px) scaleX(${E.outCubic(sk).toFixed(3)})`;O($('streak'),sk>0&&sk<1?1-sk*0.6:0);
+    if(t>=39.85&&t<40.5){const tk=C($('tglk')),k1=E.outCubic(P(t,39.85,40.15));cur={x:L(1000,tk.x,k1),y:L(1500,tk.y,k1),o:P(t,39.85,40.0)*(1-P(t,40.4,40.5))};if(t>=40.2) click=40.2;}
+    O($('s11b'),P(t,40.55,40.62)*(1-P(t,43.15,43.4)));
+    T($('s11img'),0,0,L(.5,1,E.outBack(P(t,40.62,41.2))),2.5*Math.exp(-(t-40.6)*3)*Math.sin((t-40.6)*9),1);
+    const hk=E.outBack(P(t,41.0,41.4)),pk=E.outBack(P(t,41.15,41.55));
+    T($('s11heart'),L(-200,0,hk),14*Math.sin(t*2.2),L(.2,1,hk),L(-50,-12,hk)+4*Math.sin(t*1.7),P(t,41.0,41.1));
+    T($('s11plus'),L(200,0,pk),14*Math.cos(t*2.0),L(.2,1,pk),L(50,14,pk)+4*Math.cos(t*1.9),P(t,41.15,41.25));
+    const sv=E.outBack(P(t,41.6,42.0));T($('s11save'),0,40*(1-sv),t>=42.3&&t<42.42?0.94:1,0,P(t,41.6,41.75));
+    $('s11bm').setAttribute('fill',t>=42.3?'#B8A0F8':'none');$('s11txt').textContent=t>=42.34?'Saved for your next layout':'Save for your next layout';
+    if(t>=41.8&&t<43.2){const sp=C($('s11save')),k1=E.outCubic(P(t,41.8,42.25));cur={x:L(1000,sp.x+150,k1),y:L(1700,sp.y+10,k1),o:P(t,41.8,41.95)*(1-P(t,42.9,43.15))};if(t>=42.3) click=42.3;}
+  }
+  // ── S12 end
+  if(t>=WIN.s12[0]){
+    const k=E.outBack(P(t,43.4,43.85));T($('s12av'),0,0,L(.3,1,k),0,P(t,43.4,43.5),12*(1-E.outCubic(P(t,43.4,43.7))));
+    const pk=E.outBack(P(t,43.75,44.1));T($('s12plus'),0,8*Math.sin(t*2.5),L(.2,1,pk),L(40,10,pk),P(t,43.75,43.85));
+    BW($('s12n'),t,43.65);BW($('s12h'),t,43.8);BW($('s12f'),t,43.95);
+  }
+
+  const ce=$('cur');if(cur){T(ce,cur.x-5,cur.y-5,1,0,cur.o);}else O(ce,0);
+  const rp=$('ripple');if(click>=0&&cur){const q=P(t,click,click+0.5);rp.style.left=cur.x+'px';rp.style.top=cur.y+'px';T(rp,0,0,L(.2,1.3,E.outCubic(q)),0,(1-q)*0.9);}else O(rp,0);
+  $('world').style.transform=shake?`translateY(${f2(shake)}px)`:'none';
+}
+window.renderAt=render;
+window.reelReady=(async()=>{await document.fonts.ready;await Promise.all([...document.images].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r;})));
+  const fit=()=>{if(window.__RENDER__){VS=1;$('view').style.transform='none';return;}VS=Math.min(innerWidth/1080,innerHeight/1920);$('view').style.transform=`translate(${(innerWidth-1080*VS)/2}px,${(innerHeight-1920*VS)/2}px) scale(${VS})`;};
+  fit();addEventListener('resize',fit);render(0);
+  if(!window.__RENDER__){const t0=performance.now();const loop=n=>{render(((n-t0)/1000)%DUR);requestAnimationFrame(loop);};requestAnimationFrame(loop);}
+  return true;})();
+})();
+</script>

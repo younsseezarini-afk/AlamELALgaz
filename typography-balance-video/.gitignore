@@ -1,0 +1,10 @@
+.frames/
+.stills/
+.audio.wav
+.sfx.json
+.reel-tmp.html
+.render-tmp.html
+.seg*.mp4
+.segs.txt
+.music.wav
+.final-audio.wav
