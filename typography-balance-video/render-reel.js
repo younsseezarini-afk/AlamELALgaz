@@ -6,6 +6,21 @@ const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
+const http = require('http');
+
+// ES modules and fetch() need http://, so pages are served from this folder
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.css': 'text/css' };
+function serve(root) {
+  return new Promise((res) => {
+    const srv = http.createServer((req, rsp) => {
+      const f = path.join(root, decodeURIComponent(req.url.split('?')[0]));
+      if (!f.startsWith(root) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { rsp.writeHead(404); rsp.end(); return; }
+      rsp.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' });
+      fs.createReadStream(f).pipe(rsp);
+    }).listen(0, '127.0.0.1', () => res(srv));
+  });
+}
+let BASE = '';
 
 const dir = __dirname;
 const [mode = 'frames', arg] = process.argv.slice(2);
@@ -13,7 +28,7 @@ const [mode = 'frames', arg] = process.argv.slice(2);
 async function openPage(browser, tmp) {
   const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
   await page.addInitScript(() => { window.__RENDER__ = true; });
-  await page.goto('file://' + tmp, { waitUntil: 'networkidle' });
+  await page.goto(BASE + path.basename(tmp), { waitUntil: 'networkidle' });
   await page.evaluate(() => window.reelReady);
   return page;
 }
@@ -21,7 +36,9 @@ async function openPage(browser, tmp) {
 (async () => {
   const tmp = path.join(dir, '.reel-tmp.html');
   fs.writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8"></head><body>${fs.readFileSync(path.join(dir, process.env.REEL || 'reel.html'), 'utf8')}</body></html>`);
-  const browser = await chromium.launch();
+  const srv = await serve(dir);
+  BASE = `http://127.0.0.1:${srv.address().port}/`;
+  const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   try {
     if (mode === 'stills') {
       const out = path.join(dir, '.stills');
@@ -83,6 +100,7 @@ async function openPage(browser, tmp) {
     }
   } finally {
     await browser.close();
+    srv.close();
     fs.unlinkSync(tmp);
   }
 })();
