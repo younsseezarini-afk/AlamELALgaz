@@ -1,0 +1,665 @@
+<title>Type Has Weight Reel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@100..900&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+/* Time-driven reel: every frame is computed by render(t). 1080 × 1920, 105 BPM, 20 bars. */
+:root{--display:'Inter Tight','Helvetica Neue',Helvetica,Arial,sans-serif;--mono:'Geist Mono',ui-monospace,Menlo,monospace;color-scheme:dark}
+html,body{margin:0;height:100%;background:#000}
+body{overflow:hidden}
+#view{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0}
+#stage{position:absolute;inset:0;overflow:hidden;background:#07031A;font-family:var(--display);color:#F5F2FF;line-height:1.1;font-size:32px}
+#stage *{box-sizing:border-box}
+.bgx{position:absolute;inset:0;background:
+  radial-gradient(1000px 560px at 50% 112%,rgba(108,52,230,.62),transparent 70%),
+  radial-gradient(760px 640px at 92% 4%,rgba(72,24,184,.26),transparent 70%),
+  radial-gradient(600px 500px at 0% 40%,rgba(72,24,184,.12),transparent 70%),
+  linear-gradient(180deg,#07031A 0%,#0B0524 55%,#160A38 100%)}
+.floor{position:absolute;left:-60%;right:-60%;bottom:-260px;height:980px;
+  background-image:linear-gradient(rgba(184,160,248,.18) 2px,transparent 2px),linear-gradient(90deg,rgba(184,160,248,.18) 2px,transparent 2px);
+  background-size:190px 190px;background-position:center bottom;transform:perspective(760px) rotateX(74deg);transform-origin:50% 100%;
+  -webkit-mask-image:linear-gradient(to top,#000 5%,transparent 70%);mask-image:linear-gradient(to top,#000 5%,transparent 70%)}
+#pulse{position:absolute;left:0;right:0;bottom:-200px;height:700px;background:radial-gradient(600px 300px at 50% 80%,rgba(140,90,255,.55),transparent 70%);opacity:.35}
+.hd{position:absolute;top:118px;left:72px;right:72px;display:flex;align-items:center;gap:24px;z-index:20}
+.av{width:96px;height:96px;border-radius:50%;border:3px solid #B8A0F8;object-fit:cover;box-shadow:0 0 30px rgba(184,160,248,.35)}
+.who b{display:block;font-size:32px;font-weight:500;line-height:1.15}
+.who span{display:block;font-size:26px;color:#A99BC9}
+.ct{margin-left:auto;font-size:30px;color:#A99BC9;display:flex;align-items:center;gap:22px;font-variant-numeric:tabular-nums}
+.ctn{display:inline-block;overflow:hidden;height:1.15em;vertical-align:bottom}
+.ctn b{display:inline-block;color:#fff;font-weight:400}
+.ct i{width:96px;height:2px;background:rgba(169,155,201,.4);position:relative}
+.ct i u{position:absolute;left:0;top:0;bottom:0;width:0;background:#B8A0F8;box-shadow:0 0 8px #B8A0F8}
+.ft{position:absolute;left:72px;right:72px;bottom:104px;display:flex;align-items:center;gap:30px;font-size:22px;letter-spacing:.32em;text-transform:uppercase;color:#A99BC9;z-index:20}
+.ft .x{font-size:30px;letter-spacing:0;color:#fff}
+.ft .go{margin-left:auto;width:76px;height:76px;border:2px solid #F5F2FF;border-radius:50%;display:grid;place-items:center}
+.ft .go svg{width:30px;height:30px}
+
+#world{position:absolute;inset:0}
+.sc{position:absolute;inset:0;display:none;transform-origin:50% 50%}
+.abs{position:absolute}
+.hl{position:absolute;left:60px;right:60px;text-align:center;letter-spacing:-.025em;line-height:1.02;z-index:3}
+.hl .l{display:block;color:#C9B8FF;font-weight:400}
+.hl .w{display:block;color:#fff;font-weight:500}
+.mw{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .03em .16em;margin:0 -.03em -.16em}
+.wi{display:inline-block}
+.center{position:absolute;left:0;right:0;text-align:center}
+.chip{display:inline-flex;align-items:center;gap:14px;padding:14px 26px;border-radius:999px;border:2px solid rgba(184,160,248,.38);background:rgba(184,160,248,.08);font:500 24px/1 var(--mono);letter-spacing:.1em;color:#D8CCFF;text-transform:uppercase;white-space:nowrap}
+.chip i{width:12px;height:12px;border-radius:50%;background:#B8A0F8;box-shadow:0 0 14px #B8A0F8}
+.tilt{display:inline-flex;gap:16px;align-items:center;padding:16px 26px;border-radius:20px;background:rgba(14,8,36,.78);border:2px solid rgba(184,160,248,.28);font:500 28px/1 var(--mono);color:#EDE6FF;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tilt .dot{width:16px;height:16px;border-radius:50%;background:#B8A0F8;box-shadow:0 0 16px #B8A0F8}
+.tilt.warn{border-color:rgba(255,143,184,.5)}
+.tilt.warn .dot{background:#FF8FB8;box-shadow:0 0 16px #FF8FB8}
+.tilt.ok{border-color:#B8A0F8;box-shadow:0 0 40px rgba(184,160,248,.35)}
+.tilt small{font-size:22px;color:#A99BC9}
+.glass{border-radius:32px;background:linear-gradient(180deg,rgba(44,24,96,.6),rgba(16,9,40,.78));border:2px solid rgba(184,160,248,.24);box-shadow:inset 0 2px 0 rgba(255,255,255,.07),0 40px 90px rgba(0,0,0,.45)}
+.insp{padding:30px 36px;display:grid;gap:22px;font:500 24px/1.2 var(--mono);color:#A99BC9}
+.row{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.row b{color:#fff;font-weight:500}
+.track{height:10px;border-radius:10px;background:rgba(184,160,248,.18);position:relative}
+.track .fill{position:absolute;left:0;top:0;bottom:0;border-radius:10px;background:linear-gradient(90deg,#6B3BEA,#B8A0F8)}
+.track .knob{position:absolute;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:#fff;box-shadow:0 0 0 8px rgba(184,160,248,.32),0 0 30px rgba(184,160,248,.6)}
+.ticks{display:flex;justify-content:space-between;font-size:20px;color:#6E6390}
+
+.beam{position:absolute;left:110px;width:860px;height:320px;top:1060px}
+.bar{position:absolute;left:0;right:0;top:120px;height:38px;border-radius:8px;transform-origin:50% 50%;
+  background:linear-gradient(180deg,#F4EDFF 0%,#C2A8FF 12%,#7046E0 36%,#341687 66%,#170A40 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.1),0 18px 50px rgba(120,70,255,.5),0 0 90px rgba(120,70,255,.25)}
+.bar::after{content:"";position:absolute;left:3%;right:3%;top:4px;height:5px;border-radius:5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent)}
+.fulcrum{position:absolute;left:50%;top:158px;width:150px;height:116px;margin-left:-75px;clip-path:polygon(50% 0,100% 100%,0 100%);background:linear-gradient(115deg,#EADFFF 0%,#9A78F2 30%,#4A23B5 62%,#1C0E52 100%)}
+.refl{position:absolute;left:4%;right:4%;top:252px;height:70px;background:radial-gradient(closest-side,rgba(160,110,255,.7),transparent);filter:blur(10px)}
+.load{position:absolute;bottom:100%;line-height:.78;white-space:nowrap;color:#fff}
+.load.l{left:10px}.load.r{right:10px}
+.lw{position:absolute;bottom:4px;opacity:0}
+.load.l .lw{left:0}.load.r .lw{right:0}
+
+.sel{position:absolute;border:3px solid #B8A0F8;pointer-events:none}
+.sel i{position:absolute;width:22px;height:22px;background:#fff;border:3px solid #B8A0F8}
+.sel .tl{left:-13px;top:-13px}.sel .tr{right:-13px;top:-13px}.sel .bl{left:-13px;bottom:-13px}.sel .br{right:-13px;bottom:-13px}
+.dim{position:absolute;background:#B8A0F8;color:#120829;font:600 22px/1 var(--mono);padding:8px 14px;border-radius:8px;white-space:nowrap}
+.gaze{position:absolute;width:62px;height:62px;border-radius:50%;border:3px solid #FFC857;color:#FFC857;font:600 26px/56px var(--mono);text-align:center;background:rgba(255,200,87,.1);opacity:0}
+#cur{position:absolute;left:0;top:0;z-index:16;width:64px;height:76px;opacity:0}
+#cur svg{width:64px;height:76px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+#cur span{position:absolute;left:50px;top:62px;background:#B8A0F8;color:#120829;font:600 24px/1 var(--display);padding:10px 16px;border-radius:4px 12px 12px 12px;white-space:nowrap}
+#ripple{position:absolute;left:0;top:0;width:140px;height:140px;margin:-70px 0 0 -70px;border-radius:50%;border:3px solid #B8A0F8;z-index:15;opacity:0}
+
+.poster{position:absolute;border-radius:36px;background:linear-gradient(180deg,rgba(42,24,92,.66),rgba(16,9,40,.82));border:2px solid rgba(184,160,248,.26);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.07),0 60px 120px rgba(0,0,0,.55),0 0 140px rgba(107,59,234,.2)}
+.poster > *{position:absolute}
+.p-eye{font:500 22px/1 var(--mono);letter-spacing:.2em;color:#C9B8FF;text-transform:uppercase;white-space:nowrap}
+.p-cta{padding:22px 40px;border-radius:999px;background:linear-gradient(90deg,#6B3BEA,#B8A0F8);color:#fff;font-weight:600;font-size:30px;white-space:nowrap;box-shadow:0 10px 40px rgba(107,59,234,.45)}
+.p-meta{font-size:28px;color:#A99BC9;white-space:nowrap}
+.pill-img{display:inline-block;width:230px;height:108px;border-radius:999px;background-size:cover;background-position:center;vertical-align:-14px;border:2px solid rgba(184,160,248,.4);box-shadow:0 0 40px rgba(107,59,234,.35)}
+.img-blend{position:absolute;background-size:cover;background-position:center;-webkit-mask-image:radial-gradient(closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(closest-side,#000 62%,transparent 100%)}
+.redl{position:absolute;background:#FF8FB8}
+.redt{position:absolute;background:#FF8FB8;color:#120829;font:600 22px/1 var(--mono);padding:8px 12px;border-radius:8px;white-space:nowrap}
+#preview-note{position:fixed;left:12px;bottom:12px;font:500 12px var(--mono);color:#A99BC9}
+</style>
+
+<div id="view"><div id="stage">
+  <div class="bgx"></div><div class="floor"></div><div id="pulse"></div>
+
+  <div id="world">
+
+  <!-- ═════════ S1 HOOK ═════════ -->
+  <div class="sc" id="s1">
+    <div class="abs" id="s1speed" style="left:60px;top:980px;width:300px;height:300px">
+      <div class="abs" style="left:36px;top:30px;width:150px;height:4px;border-radius:4px;background:linear-gradient(90deg,transparent,rgba(184,160,248,.5));transform:rotate(14deg)"></div>
+      <div class="abs" style="left:10px;top:110px;width:210px;height:4px;border-radius:4px;background:linear-gradient(90deg,transparent,rgba(184,160,248,.4));transform:rotate(14deg)"></div>
+      <div class="abs" style="left:50px;top:200px;width:130px;height:4px;border-radius:4px;background:linear-gradient(90deg,transparent,rgba(184,160,248,.3));transform:rotate(14deg)"></div>
+    </div>
+    <div class="poster" id="s1p" style="left:170px;top:880px;width:720px;height:740px">
+      <div class="p-eye" id="s1pe" style="left:44px;top:40px">Design workshop</div>
+      <div id="s1ph" style="right:-74px;top:96px;text-align:right;font-size:120px;font-weight:900;line-height:.86;text-transform:uppercase;letter-spacing:-.03em">Build<br>a clear<br>visual<br>identity</div>
+      <div class="p-meta" id="s1pm" style="left:44px;bottom:150px;font-size:22px">Saturday · 10:00 AM</div>
+      <div class="p-cta" id="s1pc" style="left:44px;bottom:56px;font-size:22px;padding:14px 24px">Book your seat</div>
+    </div>
+    <div class="hl" id="s1a" style="top:300px">
+      <div class="w" style="font-size:134px"><span class="mw"><span class="wi" id="s1your">Your</span></span> <span class="mw"><span class="wi">layout</span></span></div>
+      <div class="w" style="font-size:134px"><span class="mw"><span class="wi">isn't</span></span><span id="ugly" style="position:relative;display:inline-block;color:#C9B8FF;margin-left:.24em">ugly<span id="strike" class="abs" style="left:-6px;right:-6px;top:52%;height:9px;background:#FF8FB8;border-radius:6px;transform-origin:0 50%;box-shadow:0 0 20px rgba(255,143,184,.6)"></span><span class="sel" id="uglySel" style="left:-16px;right:-16px;top:-2px;bottom:-14px"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br" id="uglyBR"></i></span></span><span id="caret" style="display:inline-block;width:6px;height:118px;background:#B8A0F8;vertical-align:-14px;margin-left:8px;opacity:0"></span><span class="mw"><span class="wi">.</span></span></div>
+    </div>
+    <div class="hl" id="s1b" style="top:290px">
+      <div class="w" style="font-size:134px"><span class="mw"><span class="wi">It's</span></span></div>
+      <div class="w" id="s1unb" style="font-size:150px;font-weight:600;letter-spacing:-.03em"></div>
+    </div>
+    <div class="abs" style="right:72px;top:770px"><div class="tilt warn" id="s1tilt"><span class="dot"></span><span id="s1tv">Tilt 2.0°</span></div></div>
+  </div>
+
+  <!-- ═════════ BEAM (persists S2 → S5) ═════════ -->
+  <div class="sc" id="beamg">
+    <div class="beam" id="beam">
+      <div class="bar" id="bar">
+        <div class="load l">
+          <span class="lw" id="bBuild" style="left:-34px;font-size:150px;font-weight:900;letter-spacing:-.03em">
+            <span id="bGhost" class="abs" style="left:-6px;bottom:-4px;font-size:150px;color:transparent;outline:3px dashed rgba(184,160,248,.55);outline-offset:4px;opacity:0">BUILD</span>
+            <span id="bBuildT" style="position:relative">BUILD</span>
+            <span class="sel" id="bSel" style="left:-14px;right:-14px;top:-14px;bottom:-8px;opacity:0"><i class="tl"></i><i class="tr" id="bTR"></i><i class="bl"></i><i class="br"></i></span>
+            <span class="dim" id="bDim" style="left:50%;bottom:-66px;margin-left:-70px;opacity:0;font-size:20px">150 px</span>
+            <span class="gaze" id="g1" style="right:-70px;top:-60px">1</span>
+          </span>
+          <span class="lw" id="bLight" style="font-size:176px;font-weight:900;letter-spacing:-.02em">
+            <span class="abs trail" style="left:-44px;bottom:0;font-weight:900;color:rgba(184,160,248,.10)">Light</span>
+            <span class="abs trail" style="left:-33px;bottom:0;font-weight:700;color:rgba(184,160,248,.16)">Light</span>
+            <span class="abs trail" style="left:-22px;bottom:0;font-weight:500;color:rgba(184,160,248,.24)">Light</span>
+            <span class="abs trail" style="left:-11px;bottom:0;font-weight:300;color:rgba(184,160,248,.36)">Light</span>
+            <span id="bLightT" style="position:relative">Light</span>
+          </span>
+          <span class="lw" id="bPara" style="width:400px;white-space:normal;font-size:25px;line-height:1.38;font-weight:400;color:#8F86AE">Two hours on type pairing, grids and spacing. Bring a laptop and one layout you want to fix. Coffee is on us. Seats are limited to twenty, so book early and arrive on time.</span>
+        </div>
+        <div class="load r">
+          <span class="lw" id="bTime" style="font-size:40px;font-weight:400">10:00 AM<span class="gaze" id="g2" style="right:-30px;top:-86px">2</span></span>
+          <span class="lw" id="bBold" style="font-size:80px;font-weight:900;letter-spacing:-.02em">BOLD</span>
+          <span class="lw" id="bSat" style="font-size:96px;font-weight:600;letter-spacing:-.02em">
+            <span id="satAura" class="abs" style="left:-40px;right:-40px;top:-60px;bottom:-60px;background:radial-gradient(closest-side,rgba(184,160,248,.5),transparent);filter:blur(10px);opacity:0"></span>
+            <span style="position:relative;color:#5E5480">Saturday</span>
+            <span id="satGrad" class="abs" style="left:0;bottom:0;background:linear-gradient(180deg,#FFFFFF 10%,#C9B8FF 55%,#8D62FF 100%);-webkit-background-clip:text;background-clip:text;color:transparent;clip-path:inset(0 0 100% 0)">Saturday</span>
+          </span>
+        </div>
+      </div>
+      <div class="fulcrum"></div><div class="refl"></div>
+    </div>
+    <div class="center" style="top:1440px"><div class="tilt" id="tiltB" style="opacity:0"><span class="dot"></span><span id="tiltBv">Tilt 0.0°</span><small id="tiltBs"></small></div></div>
+  </div>
+
+  <!-- ═════════ S2 RULE ═════════ -->
+  <div class="sc" id="s2">
+    <div class="hl" id="s2h" style="top:300px"><div class="l" data-w style="font-size:88px">Every word</div><div class="w" data-w style="font-size:142px">has weight.</div></div>
+    <div class="abs glass insp" id="s2m" style="left:150px;right:150px;top:1420px">
+      <div class="row"><span>VISUAL WEIGHT</span><b id="s2mt" style="color:#FF8FB8">Tilt 0.0°</b></div>
+      <div class="track"><div class="fill" id="s2mf" style="width:50%"></div></div>
+      <div class="row"><b id="s2ml">L 50</b><b id="s2mr">R 50</b></div>
+    </div>
+  </div>
+
+  <!-- ═════════ S3 SIZE ═════════ -->
+  <div class="sc" id="s3">
+    <div class="center" style="top:278px"><span class="chip" id="s3c"><i></i>Lever 01 · Size</span></div>
+    <div class="hl" id="s3h" style="top:370px"><div class="l" data-w style="font-size:58px">Size is the heaviest lever.</div><div class="w" data-w style="font-size:122px">Pick one hero.</div></div>
+    <div class="abs glass" id="s3card" style="left:72px;right:72px;top:650px;height:290px;padding:30px 44px;display:flex;align-items:flex-end;justify-content:space-between">
+      <div class="aa" style="display:grid;gap:14px;justify-items:start"><span style="font-size:128px;font-weight:700;line-height:.8">Aa</span><span style="font:500 22px var(--mono);color:#C9B8FF">128 · HERO</span></div>
+      <div class="aa" style="display:grid;gap:14px;justify-items:start"><span style="font-size:64px;font-weight:600;line-height:.8">Aa</span><span style="font:500 22px var(--mono);color:#A99BC9">64 · SUB</span></div>
+      <div class="aa" style="display:grid;gap:14px;justify-items:start"><span style="font-size:32px;font-weight:500;line-height:.8">Aa</span><span style="font:500 22px var(--mono);color:#A99BC9">32 · BODY</span></div>
+      <div class="aa" style="display:grid;gap:14px;justify-items:start"><span style="font-size:16px;font-weight:500;line-height:.8">Aa</span><span style="font:500 22px var(--mono);color:#A99BC9">16 · META</span></div>
+      <span class="chip abs" style="right:30px;top:26px;font-size:20px;padding:10px 18px">×2 scale</span>
+    </div>
+  </div>
+
+  <!-- ═════════ S4 WEIGHT ═════════ -->
+  <div class="sc" id="s4">
+    <div class="center" style="top:278px"><span class="chip" id="s4c"><i></i>Lever 02 · Weight</span></div>
+    <div class="hl" id="s4h" style="top:370px"><div class="l" data-w style="font-size:58px">Weight works too.</div><div class="w" data-w style="font-size:106px">Light balances bold.</div></div>
+    <div class="abs glass insp" id="s4sl" style="left:72px;right:72px;top:640px">
+      <div class="row"><span>FONT WEIGHT · wght</span><b><span id="s4v">900</span></b></div>
+      <div class="track" style="margin-block:10px"><div class="fill" id="s4f" style="width:100%"></div><div class="knob" id="s4k" style="left:100%"></div></div>
+      <div class="ticks"><span>100</span><span>300</span><span>500</span><span>700</span><span>900</span></div>
+    </div>
+    <div class="center" id="s4eq" style="top:1560px;font:500 26px var(--mono);color:#A99BC9;letter-spacing:.04em">big + light  =  small + bold</div>
+  </div>
+
+  <!-- ═════════ S5 COLOR ═════════ -->
+  <div class="sc" id="s5">
+    <div class="center" style="top:278px"><span class="chip" id="s5c"><i></i>Lever 03 · Color</span></div>
+    <div class="hl" id="s5h" style="top:370px"><div class="l" data-w style="font-size:58px">Color adds weight.</div><div class="w" data-w style="font-size:100px">One word. All eyes.</div></div>
+    <div class="abs glass" id="s5sw" style="left:240px;right:240px;top:650px;height:150px;display:flex;align-items:center;justify-content:center;gap:30px">
+      <span style="width:62px;height:62px;border-radius:50%;background:#3A2A5C"></span>
+      <span style="width:62px;height:62px;border-radius:50%;background:#6E6390"></span>
+      <span style="width:62px;height:62px;border-radius:50%;background:#A99BC9"></span>
+      <span id="sw4" style="position:relative;width:62px;height:62px;border-radius:50%;background:#B8A0F8"><span id="sw4r" class="abs" style="inset:-14px;border-radius:50%;border:4px solid #B8A0F8;box-shadow:0 0 40px #B8A0F8;opacity:0"></span></span>
+      <span style="width:62px;height:62px;border-radius:50%;background:#F5F2FF"></span>
+    </div>
+    <div class="center" style="top:830px"><span class="dim" id="s5hex" style="position:relative;display:inline-block;opacity:0">#B8A0F8 · lavender</span></div>
+  </div>
+
+  <!-- ═════════ S6 SPACE ═════════ -->
+  <div class="sc" id="s6">
+    <div class="center" style="top:278px"><span class="chip" id="s6c"><i></i>Lever 04 · Space</span></div>
+    <div class="hl" id="s6h" style="top:370px"><div class="l" data-w style="font-size:76px">Space is weight</div><div class="w" data-w style="font-size:118px">you can't see.</div></div>
+    <div class="poster" id="s6p" style="left:120px;top:650px;width:840px;height:820px">
+      <div class="p-eye" id="s6e">Design workshop</div>
+      <div id="s6t" style="font-size:78px;font-weight:600;letter-spacing:-.02em;white-space:nowrap">Build a clear<br><span style="color:#C9B8FF">visual identity.</span></div>
+      <div id="s6b" style="width:560px;font-size:28px;line-height:1.45;color:#A99BC9">Two hours on type pairing, grids and spacing.</div>
+      <div id="s6hatch" style="left:96px;top:540px;width:648px;height:96px;border-radius:12px;background:repeating-linear-gradient(-45deg,rgba(184,160,248,.16) 0 10px,transparent 10px 22px);border:2px dashed rgba(184,160,248,.4);opacity:0"><span style="position:absolute;left:22px;top:34px;font:500 22px var(--mono);color:#C9B8FF;letter-spacing:.06em">EMPTY SPACE · STILL WEIGHT</span></div>
+      <div class="p-meta" id="s6m">Saturday · 10:00 AM</div>
+      <div class="p-cta" id="s6cta" style="font-size:26px;padding:18px 32px">Book your seat</div>
+      <div id="s6red" style="inset:0;opacity:0">
+        <div class="redl" id="rTop" style="left:150px;top:0;width:3px"></div><span class="redt" id="rTopL" style="left:164px">96</span>
+        <div class="redl" id="rLeft" style="left:0;height:3px"></div>
+        <div class="redl" id="rGap" style="left:560px;width:3px"></div><span class="redt" id="rGapL" style="left:576px">48</span>
+        <div id="rLH" style="position:absolute;left:724px;width:24px;border:3px solid #FF8FB8;border-left:0"></div><span class="redt" id="rLHL" style="left:770px">LH 130%</span>
+      </div>
+    </div>
+    <div class="abs glass insp" id="s6in" style="left:568px;top:1452px;width:440px;padding:26px 30px;gap:16px;font-size:22px">
+      <div class="row"><span>Line height</span><b id="s6v1">100%</b></div>
+      <div class="row"><span>Tracking</span><b id="s6v2">0%</b></div>
+      <div class="row"><span>Margins</span><b id="s6v3">28</b></div>
+    </div>
+  </div>
+
+  <!-- ═════════ S7 AXIS ═════════ -->
+  <div class="sc" id="s7">
+    <div class="abs" id="s7ax" style="left:539px;top:280px;width:2px;height:680px;transform-origin:50% 0;background:repeating-linear-gradient(180deg,rgba(184,160,248,.6) 0 14px,transparent 14px 26px)"></div>
+    <div class="abs" id="s7sym" style="left:72px;top:290px;font:500 22px var(--mono);letter-spacing:.18em;color:#A99BC9">SYMMETRY</div>
+    <div class="hl" style="top:430px">
+      <div class="w" id="s7l1" style="font-size:130px">Center it</div>
+      <div class="w" id="s7l2" style="font-size:104px;font-weight:400;margin-top:30px">for <span class="pill-img" id="s7p1" style="background-image:url(assets/arcs.jpg)"></span> calm.</div>
+    </div>
+    <div class="abs" id="s7div" style="left:72px;right:72px;top:1000px;height:3px;background:linear-gradient(90deg,transparent,#B8A0F8,transparent);box-shadow:0 0 30px #B8A0F8"></div>
+    <div class="abs" id="s7asym" style="right:72px;top:1040px;font:500 22px var(--mono);letter-spacing:.18em;color:#A99BC9">ASYMMETRY</div>
+    <div class="abs" id="s7diag" style="left:90px;top:1100px;width:1058px;height:3px;transform-origin:0 50%;background:repeating-linear-gradient(90deg,rgba(184,160,248,.5) 0 14px,transparent 14px 26px)"></div>
+    <div class="abs" id="s7off" style="left:72px;top:1090px;font-size:156px;font-weight:700;letter-spacing:-.035em;line-height:1;z-index:3">Offset it</div>
+    <div class="abs" id="s7en" style="left:72px;top:1270px;font-size:92px;font-weight:400;letter-spacing:-.02em;z-index:3"><span class="mw"><span class="wi">for</span></span> <span class="mw" style="padding:6px;margin:-6px"><span class="wi"><span class="pill-img" style="background-image:url(assets/spheres.jpg);width:210px;height:100px"></span></span></span> <span class="mw"><span class="wi">energy.</span></span></div>
+    <div class="abs" id="s7cw" style="right:72px;top:1500px;text-align:right;font-size:36px;color:#C9B8FF;line-height:1.3;z-index:3">then counter<br>the heavy side <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#B8A0F8;box-shadow:0 0 18px #B8A0F8;vertical-align:2px;margin-left:6px"></span></div>
+  </div>
+
+  <!-- ═════════ S8 ITERATE ═════════ -->
+  <div class="sc" id="s8">
+    <div class="abs" style="left:72px;top:290px;z-index:5;letter-spacing:-.03em;line-height:1">
+      <div id="s8a" style="font-size:120px;font-weight:200;transform-origin:0 50%">Nudge.</div>
+      <div id="s8b" style="font-size:120px;font-weight:500;color:#C9B8FF;margin-left:120px;transform-origin:0 50%">Step back.</div>
+      <div id="s8c" style="font-size:120px;font-weight:900;margin-left:40px;transform-origin:0 50%">Nudge again.</div>
+    </div>
+    <div class="abs" style="left:180px;top:780px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#E9DDFF,#7B4DFF 45%,#1E0B5A 80%);filter:blur(14px);opacity:.55"></div>
+    <div class="abs" style="right:120px;top:1580px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#E9DDFF,#7B4DFF 45%,#1E0B5A 80%);filter:blur(8px);opacity:.6"></div>
+    <div class="abs" id="s8z" style="left:0;right:0;top:700px;height:960px;perspective:1400px"></div>
+  </div>
+
+  <!-- ═════════ S9 PAYOFF ═════════ -->
+  <div class="sc" id="s9">
+    <div class="hl" id="s9h" style="top:300px"><div class="l" data-w style="font-size:84px">Same words.</div><div class="w" data-w style="font-size:118px">Now it sits still.</div></div>
+    <div class="poster" id="s9p" style="left:110px;top:640px;width:860px;height:940px;overflow:hidden">
+      <div style="inset:0">
+        <div class="img-blend" style="right:-60px;bottom:120px;width:420px;height:400px;background-image:url(assets/swirl.jpg);opacity:.9"></div>
+        <div class="p-eye" style="position:absolute;left:84px;top:96px">Design workshop</div>
+        <div style="position:absolute;left:84px;top:160px;font-size:82px;font-weight:600;line-height:1.12;letter-spacing:-.02em">Build a clear<br><span style="color:#C9B8FF">visual identity.</span></div>
+        <div style="position:absolute;left:84px;top:380px;width:520px;font-size:28px;line-height:1.45;color:#A99BC9">Two hours on type pairing, grids and spacing.</div>
+        <div class="p-meta" style="position:absolute;left:84px;bottom:200px">Saturday · 10:00 AM</div>
+        <div class="p-cta" style="position:absolute;left:84px;bottom:84px">Book your seat</div>
+      </div>
+      <div id="s9before" style="inset:0;background:#120A2E;clip-path:inset(0 100% 0 0)">
+        <div class="p-eye" style="position:absolute;left:40px;top:40px">Design workshop</div>
+        <div style="position:absolute;left:34px;top:120px;font-size:150px;font-weight:900;line-height:.84;text-transform:uppercase;letter-spacing:-.03em;transform:rotate(8deg);transform-origin:left top;white-space:nowrap">Build<br>a clear<br>visual<br>identity</div>
+        <div class="tilt warn" style="position:absolute;left:30px;bottom:104px;font-size:22px;padding:10px 16px;gap:10px"><span class="dot" style="width:12px;height:12px"></span>14.0°</div>
+      </div>
+      <span class="chip" id="s9cb" style="left:28px;bottom:28px;font-size:18px;padding:8px 14px;background:rgba(255,143,184,.15);border-color:rgba(255,143,184,.5);color:#FFC2D9;opacity:0">Before</span>
+      <span class="chip" id="s9ca" style="right:28px;bottom:28px;font-size:18px;padding:8px 14px;opacity:0">After</span>
+      <div id="s9line" style="left:0;top:0;bottom:0;width:4px;margin-left:-2px;background:#fff;box-shadow:0 0 24px #B8A0F8;opacity:0"></div>
+      <div id="s9knob" style="left:0;top:50%;width:88px;height:88px;margin:-44px 0 0 -44px;border-radius:50%;background:#fff;color:#120829;display:grid;place-items:center;font:700 30px var(--mono);box-shadow:0 0 0 8px rgba(184,160,248,.35),0 0 40px #B8A0F8;opacity:0">‹ ›</div>
+    </div>
+    <div class="center" style="top:1606px"><div class="tilt warn" id="s9t" style="opacity:0"><span class="dot"></span><span id="s9tv">14.0°</span></div></div>
+  </div>
+
+  <!-- ═════════ S10 TAKEAWAY ═════════ -->
+  <div class="sc" id="s10">
+    <div class="img-blend" id="s10img" style="left:20px;top:690px;width:1040px;height:700px;background-image:url(assets/beam.jpg);transform-origin:50% 75%"></div>
+    <div class="hl" id="s10h" style="top:300px"><div class="l" data-w style="font-size:88px">Type has weight.</div><div class="w" data-w style="font-size:136px">Design with it.</div></div>
+    <div class="center" style="top:1400px"><div class="glass" id="s10save" style="display:inline-flex;align-items:center;gap:22px;padding:30px 48px;border-radius:999px;white-space:nowrap;font-size:36px;font-weight:500;opacity:0">
+      <svg width="34" height="44" viewBox="0 0 34 44"><path id="s10bm" d="M3 3 H31 V41 L17 31 L3 41 Z" fill="none" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg>
+      <span id="s10txt">Save for your next layout</span>
+    </div></div>
+  </div>
+
+  <!-- ═════════ S11 LOOP ═════════ -->
+  <div class="sc" id="s11">
+    <div class="abs glass" id="s11c" style="left:120px;right:120px;top:520px;height:1060px;display:grid;justify-items:center;align-content:start;padding-top:90px;text-align:center">
+      <img class="s11i" src="assets/avatar.jpg" alt="" style="width:260px;height:260px;border-radius:50%;border:5px solid #B8A0F8;box-shadow:0 0 0 14px rgba(184,160,248,.12),0 0 80px rgba(184,160,248,.55);object-fit:cover">
+      <div class="s11i" style="font-size:60px;font-weight:500;margin-top:48px;letter-spacing:-.02em">Younsse Ezarini</div>
+      <div class="s11i" style="font-size:34px;color:#C9B8FF;margin-top:10px">@younsse.ezarini</div>
+      <div class="s11i" style="width:640px;height:2px;background:rgba(184,160,248,.22);margin-top:56px"></div>
+      <div class="s11i" style="font:500 22px var(--mono);letter-spacing:.2em;color:#A99BC9;margin-top:44px">THE FOUR LEVERS</div>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-top:28px;max-width:700px">
+        <span class="chip s11i" style="font-size:24px">Size</span><span class="chip s11i" style="font-size:24px">Weight</span><span class="chip s11i" style="font-size:24px">Color</span><span class="chip s11i" style="font-size:24px">Space</span>
+      </div>
+      <div class="p-cta s11i" style="margin-top:64px;font-size:34px;padding:26px 60px">Follow for more</div>
+    </div>
+    <div class="abs" id="s11your" style="font-size:134px;font-weight:500;letter-spacing:-.025em;line-height:1.02;color:#fff">Your</div>
+  </div>
+
+  </div><!-- /world -->
+
+  <div id="ripple"></div>
+  <div id="cur"><svg viewBox="0 0 40 48"><path d="M3 3 L3 39 L12.5 30 L19 45 L26 42 L19.5 27.5 L33 27.5 Z" fill="#B8A0F8" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg><span>Younsse</span></div>
+
+  <div class="hd"><img class="av" src="assets/avatar.jpg" alt=""><div class="who"><b>Younsse Ezarini</b><span>@younsse.ezarini</span></div><div class="ct"><span class="ctn"><b id="ctn">01</b></span>/11<i><u id="ctl"></u></i></div></div>
+  <div class="ft"><span class="x">×</span>Typography Balance<span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="#F5F2FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span></div>
+</div></div>
+
+<script>
+(function(){
+const BAR=240/105, BEAT=BAR/4, DUR=20*BAR;
+const ST=[0,2,4,6,8,10,12,14,15,17,19,20].map(b=>b*BAR);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const P=(t,a,b)=>clamp((t-a)/(b-a));
+const L=(a,b,k)=>a+(b-a)*k;
+const E={
+  outExpo:x=>x>=1?1:1-Math.pow(2,-10*x),
+  outCubic:x=>1-Math.pow(1-x,3),
+  inCubic:x=>x*x*x,
+  inOutCubic:x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,
+  outBack:x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);}
+};
+const spring=(x,z=.38,w=13)=>x<=0?0:1-Math.exp(-z*w*x)*Math.cos(w*Math.sqrt(1-z*z)*x);
+const settle=x=>x<=0?0:0.9*Math.exp(-x*5)*Math.sin(x*18);
+const $=id=>document.getElementById(id);
+const stage=$('stage');
+let VS=1;
+function T(el,x,y,s,r,o,b){
+  el.style.transform=`translate(${(x||0).toFixed(2)}px,${(y||0).toFixed(2)}px) rotate(${(r||0).toFixed(3)}deg) scale(${(s===undefined?1:s).toFixed(4)})`;
+  if(o!==undefined) el.style.opacity=clamp(o).toFixed(3);
+  el.style.filter=b>0.05?`blur(${b.toFixed(2)}px)`:'none';
+}
+function O(el,o){el.style.opacity=clamp(o).toFixed(3);}
+function C(el){const r=el.getBoundingClientRect(),s=stage.getBoundingClientRect();return {x:(r.left-s.left+r.width/2)/VS,y:(r.top-s.top+r.height/2)/VS};}
+
+// wrap data-w lines into masked words
+document.querySelectorAll('[data-w]').forEach(line=>{
+  line.innerHTML=line.textContent.trim().split(/\s+/).map(w=>`<span class="mw"><span class="wi">${w}</span></span>`).join(' ');
+});
+// tumbling letters
+const UNB='unbalanced.'.split(''), UY=[0,0,3,8,16,28,46,72,106,150,204], UR=[0,0,1,3,6,10,15,22,31,42,56];
+const UC=['#fff','#fff','#fff','#fff','#fff','#fff','#E3D8FF','#D3C3FF','#C9B8FF','#B8A0F8','#B8A0F8'];
+$('s1unb').innerHTML=UNB.map((c,i)=>`<i class="ul" style="display:inline-block;font-style:normal;color:${UC[i]}">${c}</i>`).join('');
+const ULS=[...document.querySelectorAll('.ul')];
+
+// headline words in/out. tins: number (start) or array of per-word starts
+function words(root,t,tin,tout,st){
+  st=st||0.06;
+  root.querySelectorAll('.wi').forEach((w,i)=>{
+    const a=Array.isArray(tin)?(tin[i]!==undefined?tin[i]:tin[tin.length-1]+0.06*(i-tin.length+1)):tin+i*st;
+    let y=110*(1-E.outExpo(P(t,a,a+0.6)));
+    if(tout!==undefined&&t>tout) y-=110*E.inCubic(P(t,tout+i*0.025,tout+i*0.025+0.3));
+    w.style.transform=`translateY(${y.toFixed(2)}%)`;
+  });
+}
+function pop(el,t,a,out){const k=E.outBack(P(t,a,a+0.3));const x=out===undefined?0:E.inCubic(P(t,out,out+0.25));T(el,0,-20*x,L(.85,1,k),0,P(t,a,a+0.15)*(1-x));}
+
+// ── iterate cards (S8) built once
+const CARDS=[
+  {l:110,t:60,w:300,h:420,ry:20,r:14,z:-1000,tag:'v1 · 14°',tc:'#FF8FB8',o:.55},
+  {l:660,t:10,w:300,h:420,ry:-18,r:9,z:-860,tag:'v2 · 9°',tc:'#FF8FB8',o:.65},
+  {l:40,t:430,w:300,h:420,ry:16,r:5,z:-640,tag:'v3 · 5°',tc:'#C9B8FF',o:.8},
+  {l:720,t:420,w:300,h:420,ry:-14,r:2,z:-540,tag:'v4 · 2°',tc:'#C9B8FF',o:.9},
+  {l:320,t:250,w:440,h:610,ry:0,r:0,z:-920,tag:'v5 · 0.0° ✓',tc:'#fff',o:1,main:true}
+];
+const s8z=$('s8z');
+CARDS.forEach((c,i)=>{
+  const d=document.createElement('div');
+  d.className='poster';d.style.cssText=`left:${c.l}px;top:${c.t}px;width:${c.w}px;height:${c.h}px;`+(c.main?'background:linear-gradient(180deg,#24124F,#120A2E);box-shadow:0 0 0 2px #B8A0F8,0 0 120px rgba(184,160,248,.45),0 60px 120px rgba(0,0,0,.55)':'');
+  const off=c.r*3;
+  d.innerHTML=c.main?
+    `<div style="left:44px;top:44px;font:500 18px var(--mono);letter-spacing:.18em;color:#C9B8FF">DESIGN WORKSHOP</div><div style="left:44px;top:96px;font-size:50px;font-weight:600;line-height:1.2;letter-spacing:-.02em;white-space:nowrap">Build a clear<br><span style="color:#C9B8FF">visual identity.</span></div><div style="left:44px;top:250px;width:300px;font-size:20px;line-height:1.45;color:#A99BC9">Two hours on type pairing, grids and spacing.</div><div style="left:44px;bottom:110px;font-size:20px;color:#A99BC9">Saturday · 10:00 AM</div><div style="left:44px;bottom:40px;padding:12px 24px;border-radius:999px;background:linear-gradient(90deg,#6B3BEA,#B8A0F8);font-size:20px;font-weight:600">Book your seat</div><div style="right:30px;bottom:46px;font:500 18px var(--mono);color:#fff;background:rgba(184,160,248,.25);padding:6px 10px;border-radius:8px">${c.tag}</div>`:
+    `<div style="left:24px;top:24px;font:500 18px var(--mono);color:${c.tc}">${c.tag}</div><div style="right:${30-off*2}px;top:${80+off}px;width:${200+off*3}px;height:${100+off*3}px;background:repeating-linear-gradient(180deg,#fff 0 ${22+c.r}px,transparent ${22+c.r}px ${32+c.r}px);opacity:.8"></div><div style="left:30px;bottom:40px;width:${120+off}px;height:30px;border-radius:30px;background:#6B3BEA"></div>`;
+  c.el=d;s8z.appendChild(d);
+});
+
+// ── sound cue list (exported for the audio mixer)
+const SFX=[];const cue=(s,lt,type,len)=>SFX.push({t:+(ST[s]+lt).toFixed(3),type,len:len||0});
+cue(0,0.95,'click');cue(0,1.06,'click');cue(0,1.25,'squeak',0.3);cue(0,2.0,'key');cue(0,2.0,'slide',0.9);cue(0,4.05,'whoosh',0.45);
+cue(1,0.55,'thunk');cue(1,2.3,'ping');cue(1,2.9,'ping');
+cue(2,0.9,'click');cue(2,1.0,'stretch',1.0);[2.0,2.3,2.6,2.9].forEach(x=>cue(2,x,'tick'));
+cue(3,1.4,'click');cue(3,1.4,'whir',1.4);cue(3,2.8,'lock');
+cue(4,1.4,'tap');cue(4,1.6,'shimmer',0.8);cue(4,2.4,'lock');cue(4,4.1,'whoosh',0.45);
+[1.0,1.1,1.2].forEach(x=>cue(5,x,'tick'));cue(5,1.4,'swell',1.2);cue(5,4.05,'whoosh',0.45);
+cue(6,0.15,'whoosh',0.5);cue(6,2.25,'slam');cue(6,3.1,'tick');cue(6,4.15,'whoosh',0.5);
+cue(7,0,'hit');cue(7,BEAT,'hit');cue(7,2*BEAT,'hit');cue(7,0.6,'whoosh',0.35);cue(7,1.2,'whoosh',0.35);
+cue(8,0.5,'swish',0.8);cue(8,1.6,'swish',1.0);cue(8,2.6,'ding');
+cue(9,2.86,'pop');
+cue(10,0.05,'pop');cue(10,1.75,'whoosh',0.4);
+window.SFX=SFX;window.DUR=DUR;window.BAR=BAR;
+
+// measure the loop word once fonts are ready
+let yourPos=null,uglyTgt={x:780,y:600};
+function measureYour(){
+  const s1=$('s1');s1.style.display='block';$('s1your').style.transform='none';
+  const r=$('s1your').getBoundingClientRect(),s=stage.getBoundingClientRect();
+  yourPos={x:(r.left-s.left)/VS,y:(r.top-s.top)/VS};
+  const y=$('s11your');y.style.left=yourPos.x+'px';y.style.top=yourPos.y+'px';
+}
+
+function wAt(l4){return l4<1.4?900:L(900,200,E.inOutCubic(P(l4,1.4,2.8)));}
+function tiltAt(t){
+  const l2=t-ST[1],l3=t-ST[2],l4=t-ST[3],l5=t-ST[4];
+  if(t<ST[2]) return l2<0.55?0:-12*spring(l2-0.55,.32,14);
+  if(t<ST[3]) return -12+8*E.outBack(P(l3,1.0,2.0));
+  if(t<ST[4]){ if(l4<1.4) return -4-6*(l4>0.3?spring(l4-0.3,.4,12):0); return -10*(wAt(l4)-200)/700+settle(l4-2.8); }
+  if(l5<1.6) return l5<0.3?0:-8*spring(l5-0.3,.4,12);
+  return -8*(1-E.inOutCubic(P(l5,1.6,2.4)))+settle(l5-2.4);
+}
+
+const scenes=['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11'].map($);
+const win=[[0,ST[1]+0.05],[ST[1],ST[2]],[ST[2],ST[3]],[ST[3],ST[4]],[ST[4],ST[5]],[ST[5],ST[6]],[ST[6]-0.3,ST[7]],[ST[7]-0.2,ST[8]],[ST[8],ST[9]],[ST[9],ST[10]],[ST[10],DUR+1]];
+
+function render(t){
+  t=clamp(t,0,DUR-1e-6);
+  scenes.forEach((s,i)=>{s.style.display=(t>=win[i][0]&&t<win[i][1])?'block':'none';});
+  const beamOn=t>=ST[1]-0.15&&t<ST[5];$('beamg').style.display=beamOn?'block':'none';
+  let cur=null,click=-1,shake=0;
+
+  // header counter + progress
+  let idx=1;for(let i=1;i<11;i++) if(t>=ST[i]) idx=i+1;
+  $('ctn').textContent=String(idx).padStart(2,'0');
+  $('ctn').style.transform=idx===1?'none':`translateY(${(100*(1-E.outExpo(P(t,ST[idx-1],ST[idx-1]+0.35)))).toFixed(1)}%)`;
+  $('ctl').style.width=(t/DUR*100).toFixed(2)+'%';
+  // floor pulse on the beat once the beat drops
+  const bi=Math.floor(t/BEAT),ph=(t%BEAT)/BEAT;
+  $('pulse').style.opacity=(t<ST[1]+0.5?0.35:0.32+(bi%4===0?0.45:0.2)*Math.exp(-ph*5)).toFixed(3);
+
+  // ── S1
+  if(t<win[0][1]){
+    const lt=t;
+    const rot=lt<2.0?L(2,7,E.inOutCubic(P(lt,0,2.0))):7+7*E.outBack(P(lt,2.0,2.7));
+    const pin=E.outCubic(P(lt,0,0.45)),ex=E.inCubic(P(lt,4.05,4.5));
+    T($('s1p'),60*E.inOutCubic(P(lt,2.0,2.8))+420*ex,40*(1-pin)+320*ex,L(.96,1,pin),rot+12*ex,pin*(1-ex));
+    const pile=E.inOutCubic(P(lt,2.15,3.0));
+    T($('s1pe'),330*pile,0);T($('s1ph'),40*pile,110*pile);T($('s1pm'),400*pile,30*pile);T($('s1pc'),430*pile,20*pile,1,-4*pile);
+    $('s1tv').textContent=`Tilt ${rot.toFixed(1)}°`;
+    pop($('s1tilt'),lt,0.3,4.1);
+    T($('s1speed'),-30*P(lt,2.4,4.0),0,1,0,P(lt,2.4,2.7)*(1-P(lt,4.0,4.3)));
+    words($('s1a'),lt,[-1,0.08,0.22,0.42],2.15);
+    const u=$('ugly');u.style.display=lt<2.0?'inline-block':'none';
+    const uk=E.outExpo(P(lt,0.32,0.8));T(u,0,60*(1-uk),1,0,uk);
+    const sk=E.outBack(P(lt,0.95,1.15));T($('uglySel'),0,0,L(1.08,1,sk),0,lt>=0.95?1:0);
+    $('strike').style.transform=`scaleX(${E.outCubic(P(lt,1.25,1.55)).toFixed(3)})`;
+    O($('caret'),(lt>=2.0&&lt<2.15)?1:0);
+    words($('s1b'),lt,[2.3],4.25);
+    const ex2=E.inCubic(P(lt,4.25,4.5));
+    T($('s1unb'),0,-60*ex2,1,0,1-ex2);
+    ULS.forEach((el,i)=>{const k=E.outExpo(P(lt,2.42+i*.03,2.9+i*.03)),q=E.outBack(P(lt,2.95+i*.035,3.7+i*.035));
+      el.style.transform=`translateY(${((1-k)*80+UY[i]*q).toFixed(2)}px) rotate(${(UR[i]*q).toFixed(2)}deg)`;el.style.opacity=k.toFixed(3);});
+    if(lt<2.0) uglyTgt=C($('uglyBR'));
+    if(lt>=0.55&&lt<2.5){const tgt=uglyTgt;const k=E.outCubic(P(lt,0.55,0.95)),a=E.inOutCubic(P(lt,2.0,2.4));
+      cur={x:L(L(1000,tgt.x,k),960,a),y:L(L(840,tgt.y,k),780,a),o:P(lt,0.55,0.7)*(1-P(lt,2.3,2.5))};}
+    if(lt>=0.95&&lt<1.5) click=0.95;
+  }
+
+  // ── BEAM group (S2 → S5)
+  if(beamOn){
+    const l2=t-ST[1],l5=t-ST[4];
+    const ein=E.outCubic(P(l2,-0.15,0.3)),eout=E.inCubic(P(l5,4.1,4.5));
+    T($('beam'),0,80*(1-ein)+260*eout,1,0,ein*(1-eout));
+    const tilt=tiltAt(t);$('bar').style.transform=`rotate(${tilt.toFixed(3)}deg)`;
+    const at=Math.abs(tilt);
+    // tilt chip S3..S5
+    const tb=$('tiltB');
+    const tbo=t>=ST[2]?P(t,ST[2]+0.2,ST[2]+0.4)*(1-P(l5,3.9,4.1)):0;
+    O(tb,tbo);tb.className='tilt'+(at>6?' warn':at<0.3?' ok':'');
+    $('tiltBv').textContent=`Tilt ${at.toFixed(1)}°`+(at<0.3?' ✓':'');
+    $('tiltBs').textContent=(t>=ST[2]+2.1&&t<ST[3])?'was 12.0°':(l5>2.5?'6 lines = 1 word':'');
+    // loads
+    const l3=t-ST[2],l4=t-ST[3];
+    // BUILD
+    const drop=E.inCubic(P(l2,0.12,0.55));
+    const bOut=P(l4,0,0.25);
+    T($('bBuild'),0,L(-760,0,drop),1-0.1*bOut,0,P(l2,0.12,0.3)*(1-bOut),8*bOut);
+    $('bBuild').style.display=t<ST[3]+0.3?'':'none';
+    const size=L(150,128,E.outCubic(P(l3,1.0,2.0)));$('bBuildT').style.fontSize=size.toFixed(2)+'px';
+    $('bBuild').style.fontSize=size.toFixed(2)+'px';
+    T($('bSel'),0,0,L(1.06,1,E.outCubic(P(l3,0.35,0.5))),0,l3>=0.35?1:0);
+    O($('bGhost'),P(l3,1.0,1.1));O($('bDim'),P(l3,1.0,1.1));$('bDim').textContent=`${Math.round(size)} px`;
+    pop($('g1'),l2,2.3,4.1);pop($('g2'),l2,2.9,4.1);
+    // 10:00 AM
+    T($('bTime'),0,30*(1-E.outCubic(P(l2,0.05,0.35))),1,0,P(l2,0.05,0.35)*(1-P(l4,0,0.2)));
+    // Light
+    const lin=E.outCubic(P(l4,0.15,0.45)),lout=P(l5,0,0.25);
+    T($('bLight'),0,40*(1-lin),1,0,lin*(1-lout),8*lout);
+    const w=t<ST[4]?wAt(l4):200;$('bLightT').style.fontWeight=w.toFixed(1);
+    const TW=[900,700,500,300];document.querySelectorAll('.trail').forEach((el,j)=>O(el,clamp((TW[j]-w)/80)));
+    // BOLD
+    T($('bBold'),0,40*(1-lin),1,0,lin*(1-P(l5,0,0.2)));
+    // paragraph + Saturday
+    const pin2=E.outCubic(P(l5,0.15,0.6)),g=E.inOutCubic(P(l5,1.6,2.4));
+    const para=$('bPara');O(para,l5>=0.15?1:0);para.style.clipPath=`inset(0 0 ${((1-pin2)*100).toFixed(1)}% 0)`;
+    para.style.color=`rgb(${L(143,94,g)|0},${L(134,84,g)|0},${L(174,128,g)|0})`;
+    T($('bSat'),0,30*(1-E.outCubic(P(l5,0.15,0.45))),1,0,P(l5,0.15,0.45));
+    $('satGrad').style.clipPath=`inset(0 0 ${((1-g)*100).toFixed(1)}% 0)`;
+    O($('satAura'),g*(0.85+0.15*Math.sin(l5*6)));
+    if(t<ST[2]+0.6) shake=l2>0.55?14*Math.exp(-(l2-0.55)*12)*Math.sin((l2-0.55)*60):0;
+  }
+
+  // ── S2
+  if(t>=ST[1]&&t<ST[2]){
+    const lt=t-ST[1];
+    words($('s2h'),lt,[0.7,0.78,0.95,1.03],4.2);
+    const k=E.outCubic(P(lt,1.2,1.6)),x=P(lt,4.15,4.45);T($('s2m'),0,40*(1-k)+30*x,1,0,k*(1-x));
+    const f=L(50,86,E.outCubic(P(lt,1.4,2.2)));$('s2mf').style.width=f.toFixed(1)+'%';
+    $('s2ml').textContent='L '+Math.round(f);$('s2mr').textContent='R '+Math.round(100-f);
+    $('s2mt').textContent=`Tilt ${Math.abs(tiltAt(t)).toFixed(1)}°`;
+  }
+  // ── S3
+  if(t>=ST[2]&&t<ST[3]){
+    const lt=t-ST[2];
+    pop($('s3c'),lt,0,4.2);words($('s3h'),lt,[0.15,0.2,0.25,0.3,0.35,1.1,1.18,1.26],4.2);
+    const k=E.outCubic(P(lt,1.7,2.1)),x=P(lt,4.15,4.45);T($('s3card'),0,30*(1-k)+30*x,1,0,k*(1-x));
+    document.querySelectorAll('#s3card .aa').forEach((el,i)=>{const a=2.0+i*0.3;T(el,0,20*(1-E.outBack(P(lt,a,a+0.3))),1,0,P(lt,a,a+0.12));});
+    const h=C($('bTR'));
+    const k1=E.outCubic(P(lt,0.4,0.9)),k2=E.inOutCubic(P(lt,2.4,2.9));
+    cur={x:L(L(1000,h.x,k1),880,k2),y:L(L(1500,h.y,k1),1300,k2),o:P(lt,0.4,0.55)};
+    if(lt>=0.9&&lt<1.4) click=ST[2]+0.9;
+  }
+  // ── S4
+  if(t>=ST[3]&&t<ST[4]){
+    const lt=t-ST[3];
+    pop($('s4c'),lt,0,4.2);words($('s4h'),lt,[0.15,0.22,0.29,1.9,1.98,2.06],4.2);
+    const k=E.outCubic(P(lt,0.6,1.0)),x=P(lt,4.15,4.45);T($('s4sl'),0,30*(1-k)+30*x,1,0,k*(1-x));
+    const w=wAt(lt),pct=(w-100)/8;$('s4k').style.left=pct.toFixed(2)+'%';$('s4f').style.width=pct.toFixed(2)+'%';$('s4v').textContent=lt<1.4?'900':(lt<2.8?`900 → ${Math.round(w)}`:'900 → 200');
+    O($('s4eq'),P(lt,3.0,3.4)*(1-P(lt,4.1,4.3)));
+    const kn=C($('s4k'));
+    const k1=E.outCubic(P(lt,0.8,1.25)),k2=E.inOutCubic(P(lt,3.1,3.6));
+    cur={x:L(L(880,kn.x,k1),900,k2),y:L(L(1300,kn.y,k1),940,k2),o:1};
+    if(lt>=1.4&&lt<1.9) click=ST[3]+1.4;
+  }
+  // ── S5
+  if(t>=ST[4]&&t<ST[5]){
+    const lt=t-ST[4];
+    pop($('s5c'),lt,0,4.0);words($('s5h'),lt,[0.15,0.22,0.29,1.9,1.98,2.06,2.14],4.0);
+    const k=E.outCubic(P(lt,0.5,0.9)),x=P(lt,4.0,4.3);T($('s5sw'),0,30*(1-k)+30*x,1,0,k*(1-x));
+    const r=E.outBack(P(lt,1.4,1.65));T($('sw4'),0,0,L(1,1.27,r),0,1);O($('sw4r'),P(lt,1.4,1.5));
+    T($('s5hex'),0,10*(1-P(lt,1.5,1.7)),1,0,P(lt,1.5,1.7)*(1-x));
+    const sw=C($('sw4'));
+    const k1=E.outCubic(P(lt,0.8,1.3)),k2=E.inOutCubic(P(lt,1.8,2.3));
+    cur={x:L(L(900,sw.x+6,k1),840,k2),y:L(L(940,sw.y+6,k1),960,k2),o:1-P(lt,3.6,4.0)};
+    if(lt>=1.4&&lt<1.9) click=ST[4]+1.4;
+  }
+  // ── S6
+  if(t>=ST[5]&&t<ST[6]){
+    const lt=t-ST[5];
+    pop($('s6c'),lt,0,4.1);words($('s6h'),lt,[0.15,0.22,0.29,0.6,0.68,0.76],4.1);
+    const k=E.outExpo(P(lt,0,0.5)),x=E.inCubic(P(lt,4.05,4.45));
+    T($('s6p'),0,40*(1-k),L(.94,1,k)*L(1,.9,x),0,k*(1-x));
+    T($('s6in'),0,30*(1-E.outCubic(P(lt,1.1,1.5)))+30*x,1,0,P(lt,1.1,1.4)*(1-x));
+    const g=E.inOutCubic(P(lt,1.4,2.6)),m=L(28,96,g),lh=L(1.0,1.3,g),ht=L(64,166,g),bt=L(232,418,g);
+    const st=(id,o)=>{const s=$(id).style;for(const k in o) s[k]=o[k];};
+    st('s6e',{left:m+'px',top:m+'px'});st('s6t',{left:m+'px',top:ht+'px',lineHeight:lh,letterSpacing:L(-.045,-.02,g)+'em'});st('s6b',{left:m+'px',top:bt+'px'});
+    st('s6m',{left:m+'px',bottom:m+'px'});st('s6cta',{right:m+'px',bottom:L(20,76,g)+'px'});
+    O($('s6red'),P(lt,0.9,1.2)*(1-P(lt,3.9,4.1)));
+    const hb=ht+2*78*lh,gap=bt-hb;
+    st('rTop',{height:m+'px'});st('rTopL',{top:(m/2-18)+'px'});$('rTopL').textContent=Math.round(m);
+    st('rLeft',{top:(m+12)+'px',width:m+'px'});
+    st('rGap',{top:hb+'px',height:gap+'px'});st('rGapL',{top:(hb+gap/2-18)+'px'});$('rGapL').textContent=Math.round(gap);
+    st('rLH',{top:(ht+10)+'px',height:(2*78*lh-20)+'px'});st('rLHL',{top:(ht+78*lh-18)+'px'});$('rLHL').textContent=`LH ${Math.round(lh*100)}%`;
+    O($('s6hatch'),P(lt,2.7,3.1));
+    $('s6v1').textContent=Math.round(lh*100)+'%';$('s6v2').textContent=(g>0.5?1:0)+'%';$('s6v3').textContent=Math.round(m);
+  }
+  // ── S7
+  if(t>=win[6][0]&&t<ST[7]){
+    const lt=t-ST[6];
+    const ex=E.inCubic(P(lt,4.15,4.55));
+    T($('s7'),0,0,L(1,.42,ex),0,1-ex,6*ex);
+    $('s7ax').style.transform=`scaleY(${E.outCubic(P(lt,-0.3,0.25)).toFixed(3)})`;
+    O($('s7sym'),P(lt,0.2,0.4));O($('s7asym'),P(lt,1.6,1.8));
+    const c1=50*(1-E.outExpo(P(lt,0.15,0.75))),c2=50*(1-E.outExpo(P(lt,0.55,1.15)));
+    $('s7l1').style.clipPath=`inset(-20% ${c1.toFixed(2)}% -20% ${c1.toFixed(2)}%)`;$('s7l2').style.clipPath=`inset(-20% ${c2.toFixed(2)}% -20% ${c2.toFixed(2)}%)`;
+    T($('s7p1'),0,0,L(.6,1,E.outBack(P(lt,0.9,1.2))),0,1);
+    $('s7div').style.transform=`scaleX(${E.outCubic(P(lt,1.35,1.75)).toFixed(3)})`;
+    $('s7diag').style.transform=`rotate(30.68deg) scaleX(${E.outCubic(P(lt,1.8,2.3)).toFixed(3)})`;
+    const sl=E.outExpo(P(lt,2.0,2.45));
+    $('s7off').style.transform=`translateX(${L(-900,0,sl).toFixed(1)}px) skewX(${L(-14,0,sl).toFixed(2)}deg)`;
+    words($('s7en'),lt,[2.45,2.55,2.65]);
+    const cw=E.outCubic(P(lt,3.1,3.5));T($('s7cw'),300*(1-cw),0,1,0,cw);
+    if(lt>2.25&&lt<2.8) shake=10*Math.exp(-(lt-2.25)*12)*Math.sin((lt-2.25)*60);
+  }
+  // ── S8
+  if(t>=win[7][0]&&t<ST[8]){
+    const lt=t-ST[7];
+    [['s8a',0],['s8b',BEAT],['s8c',2*BEAT]].forEach(([id,a])=>{const k=E.outExpo(P(lt,a,a+0.25)),x=P(lt,2.0,2.27);T($(id),0,-40*x,L(1.25,1,k),0,P(lt,a,a+0.06)*(1-x));});
+    const cam=L(0,1000,E.inOutCubic(P(lt,-0.2,2.2)));
+    CARDS.forEach(c=>{const z=c.z+cam;c.el.style.transform=`translateZ(${z.toFixed(1)}px) rotateY(${c.ry}deg) rotate(${c.r}deg)`;
+      c.el.style.zIndex=Math.round(z+3000);c.el.style.opacity=(c.o*P(lt,-0.2,0.15)*(1-P(z,220,420))).toFixed(3);});
+  }
+  // ── S9
+  if(t>=ST[8]&&t<ST[9]){
+    const lt=t-ST[8];
+    words($('s9h'),lt,[0.25,0.33,1.7,1.78,1.86,1.94],4.1);
+    const k=E.outExpo(P(lt,0,0.45)),x=E.inCubic(P(lt,4.05,4.5));
+    T($('s9p'),0,145*(1-k)+250*x,L(.55,1,k)*L(1,.3,x),0,P(lt,0,0.08)*(1-x));
+    const cut=lt<1.6?100*E.inOutCubic(P(lt,0.5,1.3)):L(100,30,E.inOutCubic(P(lt,1.6,2.6)));
+    $('s9before').style.clipPath=`inset(0 ${(100-cut).toFixed(2)}% 0 0)`;
+    const hv=(cut>0.5&&cut<99.5)||lt>=2.6?1:0;
+    $('s9line').style.left=$('s9knob').style.left=cut.toFixed(2)+'%';O($('s9line'),hv*(1-x));O($('s9knob'),hv*(1-x));
+    O($('s9cb'),P(lt,0.6,0.8)*(1-x));O($('s9ca'),P(lt,0.6,0.8)*(1-x));
+    const v=lt<1.6?14:14*clamp((cut-30)/70);
+    const tl=$('s9t');tl.className='tilt'+(v<0.05?' ok':' warn');$('s9tv').textContent=v<0.05?'0.0° ✓ Balanced':`${v.toFixed(1)}°`;
+    T(tl,0,0,1,0,P(lt,0.5,0.7)*(1-P(lt,4.05,4.3)));
+  }
+  // ── S10
+  if(t>=ST[9]&&t<ST[10]){
+    const lt=t-ST[9];
+    words($('s10h'),lt,[0.15,0.23,0.31,0.95,1.03,1.11],4.2);
+    const k=E.outCubic(P(lt,0,0.5)),x=E.inCubic(P(lt,4.2,4.55));
+    T($('s10img'),0,0,L(1.06,1,k),2.5*Math.exp(-lt*3)*Math.sin(lt*9),k*(1-x));
+    const sv=E.outBack(P(lt,2.0,2.4)),press=lt>=2.86&&lt<2.98?0.95:1;
+    T($('s10save'),0,40*(1-sv),press,0,P(lt,2.0,2.2)*(1-x));
+    $('s10bm').setAttribute('fill',lt>=2.86?'#B8A0F8':'none');
+    $('s10txt').textContent=lt>=2.9?'Saved for your next layout':'Save for your next layout';
+    const sp=C($('s10save'));
+    const k1=E.outCubic(P(lt,2.2,2.75));
+    cur={x:L(1000,sp.x+150,k1),y:L(1650,sp.y+10,k1),o:P(lt,2.2,2.35)*(1-P(lt,4.0,4.3))};
+    if(lt>=2.86&&lt<3.4) click=ST[9]+2.86;
+  }
+  // ── S11
+  if(t>=ST[10]){
+    const lt=t-ST[10];
+    const k=E.outCubic(P(lt,0,0.4)),x=E.inCubic(P(lt,1.75,2.15));
+    T($('s11c'),0,120*(1-k)-40*x,1,0,k*(1-x));
+    document.querySelectorAll('.s11i').forEach((el,i)=>{const a=0.1+i*0.06;T(el,0,20*(1-E.outCubic(P(lt,a,a+0.3))),1,0,P(lt,a,a+0.2));});
+    const f=P(lt,1.75,2.18),fy=L(-520,0,E.inCubic(f));
+    const yo=$('s11your');O(yo,lt>=1.75?1:0);
+    yo.style.transform=`translateY(${fy.toFixed(1)}px)`;
+    const trail=f<1?Math.min(60,(f*f)*120):0;
+    yo.style.textShadow=trail>1?`0 ${(-trail*0.4).toFixed(1)}px 0 rgba(255,255,255,.22),0 ${(-trail*0.8).toFixed(1)}px 0 rgba(255,255,255,.1)`:'none';
+  }
+
+  // cursor + click ripple
+  const ce=$('cur');
+  if(cur){T(ce,cur.x-5,cur.y-5,1,0,cur.o);}else O(ce,0);
+  const rp=$('ripple');
+  if(click>=0){const q=P(t,click,click+0.5);const p0=cur||{x:0,y:0};rp.style.left=p0.x+'px';rp.style.top=p0.y+'px';T(rp,0,0,L(.2,1.3,E.outCubic(q)),0,(1-q)*0.9);}else O(rp,0);
+  $('world').style.transform=shake?`translateY(${shake.toFixed(2)}px)`:'none';
+}
+
+window.renderAt=render;
+window.reelReady=(async()=>{await document.fonts.ready;
+  const fit=()=>{if(window.__RENDER__){VS=1;$('view').style.transform='none';return;}VS=Math.min(innerWidth/1080,innerHeight/1920);$('view').style.transform=`translate(${(innerWidth-1080*VS)/2}px,${(innerHeight-1920*VS)/2}px) scale(${VS})`;};
+  fit();addEventListener('resize',()=>{fit();measureYour();});measureYour();render(0);
+  if(!window.__RENDER__){const t0=performance.now();const loop=n=>{render(((n-t0)/1000)%DUR);requestAnimationFrame(loop);};requestAnimationFrame(loop);}
+  return true;})();
+})();
+</script>

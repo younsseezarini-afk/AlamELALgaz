@@ -11,6 +11,20 @@ Words sit on a chrome balance beam. A designer's cursor fixes the tilt one lever
 | `frames/contact-sheet.jpg` | All 12 frames on one sheet |
 | `assets/` | Avatar and chrome renders cropped from the “Design Balance” carousel |
 | `render-frames.js` | Re-exports the frames from `storyboard.html` (`node render-frames.js`, needs Playwright) |
+| `type-has-weight-reel.mp4` | The finished reel: 45.7 s, 1080 × 1920, 30 fps, music and sound effects at −14 LUFS |
+| `reel.html` | The animation source. Every frame is computed from the timeline by `renderAt(t)`; open it in a browser to watch it live |
+| `render-reel.js`, `make-audio.py` | Rebuild the reel (commands below) |
+
+## Rebuild the reel
+
+```bash
+node render-reel.js frames 30        # writes .frames/ and .sfx.json
+python3 make-audio.py                # writes .audio.wav from the cue list
+ffmpeg -framerate 30 -i .frames/f%05d.jpg -i .audio.wav -c:v libx264 -preset slow -crf 19 -pix_fmt yuv420p \
+  -af loudnorm=I=-14:TP=-1.5:LRA=11 -c:a aac -b:a 192k -shortest -movflags +faststart type-has-weight-reel.mp4
+```
+
+The soundtrack is synthesized (105 BPM bed in F minor plus sound effects timed to the on-screen actions). There is no voiceover yet; the script below is ready to record over it.
 
 ## Voiceover (45.7 s, 105 BPM)
 
