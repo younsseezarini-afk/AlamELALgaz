@@ -2,11 +2,13 @@
 
 A 30-second vertical (9:16, 1080×1920, 30fps) kinetic typography reel.
 
-- `typographic-balance.mp4` is the rendered video, with no audio.
-- `voiceover.srt` holds the VO lines timed to the picture.
+- `typographic-balance-reel.mp4` is the final reel to post, with voiceover and word-by-word captions.
+- `typographic-balance.mp4` is the clean version, with no audio and no captions.
+- `voiceover/` holds the voiceover clips, one per line. They were made with Piper TTS, an open-source voice engine, using the `en_US-ryan-high` voice.
+- `voiceover.srt` holds the voiceover lines timed to the picture, for use as a captions file.
 - `storyboard/storyboard.png` is the visual storyboard, with 12 frames taken from the real render.
 - `motion.html` is the source animation. Open it in a browser to preview, and click to pause.
-- `render.js` re-renders the MP4 and storyboard frames: `node render.js` (needs Playwright and ffmpeg).
+- `render.js` re-renders the video and storyboard frames: `node render.js` (needs Playwright and ffmpeg). Add `--captions` to burn in captions; see "Rebuilding the reel" below.
 
 ## Creative concept
 
@@ -42,3 +44,11 @@ The original idea was "The Art of Typography Balance" as a list of tips. This ve
 | 08 Outro | 0:26–0:30 | Collapse into a prompt pill, bookmark tap, Saved toast, CTA | Save this for your next layout. |
 
 To customise the end card, edit `CTA` near the top of `motion.html` (for example, add your handle) and re-run `node render.js`.
+
+## Rebuilding the reel
+
+1. Render the captioned picture: `node render.js reel_silent.mp4 --captions`.
+2. Lay each clip from `voiceover/` at the start time listed in the `VO` table in `motion.html`.
+3. Mux the voiceover with the picture in ffmpeg, for example with `adelay` + `amix`, then `loudnorm` to about −15 LUFS.
+
+If you re-record or change a line, update its start time and length in that `VO` table so the captions stay in sync.

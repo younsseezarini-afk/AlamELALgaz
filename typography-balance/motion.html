@@ -29,6 +29,19 @@ const C = {
 const DISP = '"Inter Display", Inter';
 const TEXT = 'Inter';
 const CTA = 'Follow for more design craft';
+// Captions (?captions): start time + spoken length of each voiceover clip in voiceover/
+const CAPTIONS = /[?&]captions/.test(location.search);
+const VO = [
+  [0.35, 1.54, 'What if you could just… generate balance?'],
+  [3.05, 3.67, 'You can’t. Most layouts don’t fail on fonts. They fail on balance.'],
+  [7.25, 2.87, 'Every word has visual weight, and size is the heaviest.'],
+  [10.75, 2.82, 'But a small, bold word can balance a big, light one.'],
+  [14.9, 2.22, 'Space has weight too. Let your text breathe.'],
+  [18.4, 2.21, 'Then lock everything to one invisible grid.'],
+  [23.25, .44, 'Scale.'], [23.65, .29, 'Weight.'], [24.05, .58, 'Space.'], [24.45, .28, 'Grid.'],
+  [25.0, 1.37, 'That’s typographic balance.'],
+  [26.75, 1.49, 'Save this for your next layout.']
+];
 
 const cv = document.getElementById('c');
 const ctx = cv.getContext('2d');
@@ -626,6 +639,62 @@ function s8(t) {
   cursor(lerp(900, bx + 8, pm), lerp(1400, cy + 12, pm), P(t, 27.4, 27.6) * (1 - P(t, 28.9, 29.2)), (t > 28.05 && t < 28.3) ? .9 : 1);
 }
 
+// ---------- captions: phrase chunks with word-by-word highlight ----------
+const CAP = { y: 300, size: 40, max: 820 };
+let CHUNKS = null; // built on first use, after fonts load
+function buildChunks() {
+  const groups = [0, 1, 2, 3, 4, 5, 6, 6, 6, 6, 7, 8]; // the four pill words build up as one caption
+  const words = [];
+  VO.forEach(([t0, dur, line], i) => {
+    const ws = line.split(' ');
+    const total = ws.reduce((a, w) => a + w.length + 1, 0);
+    let acc = 0;
+    ws.forEach(w => { words.push({ s: w, t: t0 + dur * .92 * acc / total, g: groups[i], end: t0 + dur }); acc += w.length + 1; });
+  });
+  // split each group into evenly sized phrases (no single-word widows)
+  const W_ = ws => measure(ws.map(x => x.s).join(' '), CAP.size, 600, 0, false, TEXT);
+  const chunks = [];
+  [...new Set(words.map(w => w.g))].forEach(g => {
+    const gw = words.filter(w => w.g === g);
+    const n = Math.ceil(W_(gw) / CAP.max), target = W_(gw) / n;
+    let cur = [];
+    gw.forEach(w => {
+      if (cur.length && (W_(cur) >= target || W_(cur.concat(w)) > CAP.max)) { chunks.push({ g, words: cur }); cur = []; }
+      cur.push(w);
+    });
+    chunks.push({ g, words: cur });
+  });
+  chunks.forEach(c => { c.a = c.words[0].t - .08; });
+  chunks.forEach((c, i) => {
+    const next = chunks[i + 1];
+    c.b = Math.min(next ? next.a : Infinity, c.words[c.words.length - 1].end + .45);
+  });
+  return chunks;
+}
+function captions(t) {
+  CHUNKS ??= buildChunks();
+  const c = CHUNKS.find(c => t >= c.a && t < c.b);
+  if (!c) return;
+  const p = E.outExpo(P(t, c.a, c.a + .18)), q = P(t, c.b - .12, c.b);
+  const gap = measure(' ', CAP.size, 600, 0, false, TEXT);
+  const ws = c.words.map(w => measure(w.s, CAP.size, 600, 0, false, TEXT));
+  const tw = ws.reduce((a, b) => a + b, 0) + gap * (ws.length - 1);
+  ctx.save(); ctx.globalAlpha = p * (1 - q); ctx.translate(540, CAP.y); ctx.scale(lerp(.96, 1, p), lerp(.96, 1, p));
+  ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.shadowColor = 'rgba(58,37,184,.16)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 10;
+  rr(-tw / 2 - 34, -40, tw + 68, 80, 40); ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.stroke();
+  font(CAP.size, 600, false, TEXT); ctx.letterSpacing = '0px'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  let x = -tw / 2;
+  c.words.forEach((w, i) => {
+    const nxt = c.words[i + 1];
+    const current = t >= w.t && (!nxt || t < nxt.t) && t < w.end;
+    ctx.fillStyle = t < w.t ? 'rgba(142,137,163,.5)' : current ? C.violet : C.ink;
+    ctx.fillText(w.s, x, 2);
+    x += ws[i] + gap;
+  });
+  ctx.restore();
+}
+
 // ---------- frame ----------
 function render(t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none';
@@ -634,6 +703,7 @@ function render(t) {
   s1(t); s2(t); s3(t); s4(t); s5(t); s6(t); s7(t); s8(t);
   chrome(t);
   sweep(t);
+  if (CAPTIONS) captions(t);
 }
 
 const weights = [100, 200, 300, 400, 500, 600, 700, 800, 900];
