@@ -1,6 +1,7 @@
 """Builds the reel soundtrack: a 105 BPM music bed plus sound effects placed from .sfx.json.
 
-Usage: python3 make-audio.py   (after `node render-reel.js frames`, which writes .sfx.json)
+Usage: python3 make-audio.py   (after `node render-reel.js cues|frames|video`, which writes .sfx.json)
+Set MUSIC_ONLY=1 to leave the sound effects out (mix-voice.py adds ElevenLabs ones instead).
 Writes .audio.wav (48 kHz stereo).
 """
 import json
@@ -174,7 +175,7 @@ for b in range(NB):
 GAIN = {'thunk': 0.9, 'slam': 0.75, 'hit': 0.6, 'whoosh': 0.35, 'swish': 0.3, 'click': 0.35, 'tap': 0.35, 'key': 0.4,
         'tick': 0.25, 'ping': 0.3, 'ding': 0.35, 'lock': 0.4, 'pop': 0.45, 'squeak': 0.3, 'slide': 0.35,
         'stretch': 0.3, 'whir': 0.3, 'shimmer': 0.5, 'swell': 0.35, 'riser': 0.45}
-for c in cfg['sfx']:
+for c in ([] if os.environ.get('MUSIC_ONLY') else cfg['sfx']):
     pan = 0.25 if c['type'] in ('click', 'tap', 'tick') else 0.0
     add(sfx(c['type'], c['len']), c['t'], GAIN[c['type']], pan)
 

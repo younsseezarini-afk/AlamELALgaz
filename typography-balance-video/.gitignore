@@ -6,3 +6,5 @@
 .render-tmp.html
 .seg*.mp4
 .segs.txt
+.music.wav
+.final-audio.wav

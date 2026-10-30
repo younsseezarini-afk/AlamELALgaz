@@ -1,6 +1,7 @@
 // Renders reel.html (or the file named in $REEL) to video frames with headless Chromium.
 //   node render-reel.js stills 0.5,2.0,...   → stills/t_<time>.png for checking
 //   node render-reel.js frames [fps]         → .frames/f00000.jpg … and sfx.json
+//   node render-reel.js cues                 → .sfx.json only (timeline cue list)
 //   node render-reel.js video [fps] [sub]    → .seg0.mp4 … with motion blur (sub sub-frames averaged per frame) and .sfx.json
 const fs = require('fs');
 const path = require('path');
@@ -48,6 +49,11 @@ async function openPage(browser, tmp) {
         await page.evaluate((t) => window.renderAt(t), t);
         await page.screenshot({ path: path.join(out, `t_${t.toFixed(2)}.png`) });
       }
+    } else if (mode === 'cues') {
+      const page = await openPage(browser, tmp);
+      const { dur, sfx, gaps } = await page.evaluate(() => ({ dur: window.DUR, sfx: window.SFX, gaps: window.GAPS || [] }));
+      fs.writeFileSync(path.join(dir, '.sfx.json'), JSON.stringify({ dur, bar: 240 / 105, sfx, gaps }));
+      console.log(`wrote .sfx.json (${sfx.length} cues)`);
     } else if (mode === 'video') {
       const fps = Number(arg) || 30, sub = Number(process.argv[4]) || 4, shutter = 0.5;
       const probe = await openPage(browser, tmp);

@@ -17,6 +17,7 @@ Words sit on a chrome balance beam. A designer's cursor fixes the tilt one lever
 | `render-reel.js`, `make-audio.py` | Rebuild the reel (commands below) |
 | `typography-motion.mp4` | Second video: 32 s motion graphics built from the “FINAL — Younsse Ezarini — Typography” Canva carousel, in the reference style |
 | `typography-reel.html`, `assets/typo/` | Its animation source and the five carousel pages |
+| `audio/elevenlabs/`, `mix-voice.py` | ElevenLabs voiceover (voice: Matt) and sound effects for the Typography reel, and the mixer that places them on the animation's cues and ducks the music under the voice |
 | `assets/obj3d.js`, `assets/vendor/` | The 3D objects (Aa key, A/a coins, Aa shield, keys, heart and plus coins), modelled in three.js r160 and rendered live each frame, so they have clean edges and real 3D rotation. Rebuild with `REEL=typography-reel.html node render-reel.js video 30 4`, then the same audio and ffmpeg steps |
 
 ## Rebuild the reel
@@ -45,3 +46,24 @@ The motion follows the reference reel: a card cascade that explodes into a ray b
 | 09 | 0:34.3 | Same words. Same space. Now it sits still. |
 | 10 | 0:38.9 | Type has weight. Design with it. Save this for your next layout. |
 | 11 | 0:43.4 | Follow for more. |
+
+## Typography reel audio (ElevenLabs)
+
+```bash
+REEL=typography-reel.html node render-reel.js cues        # cue list from the animation → .sfx.json
+MUSIC_ONLY=1 python3 make-audio.py && mv .audio.wav .music.wav
+python3 mix-voice.py                                       # music + ElevenLabs voice and effects → .final-audio.wav
+ffmpeg -i typography-motion.mp4 -i .final-audio.wav -map 0:v -map 1:a -c:v copy \
+  -af loudnorm=I=-14:TP=-1.5:LRA=11 -c:a aac -b:a 192k -shortest -movflags +faststart out.mp4
+```
+
+| # | Line |
+| --- | --- |
+| 1 | Your words have a voice. |
+| 2 | Typography. Built for clarity. |
+| 3 | Choose type that gives every message clarity, character, and direction. |
+| 4 | Rule one. Clear hierarchy, better flow. Size and weight lead the eye. |
+| 5 | Rule two. Choose your type, and build one identity. |
+| 6 | Rule three. Space matters. Let your words breathe. |
+| 7 | Five slides. Three rules. One clear voice. |
+| 8 | Like and follow for more. Stay inspired. |
