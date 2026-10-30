@@ -1,9 +1,11 @@
 // Renders reel.html to video frames with headless Chromium.
 //   node render-reel.js stills 0.5,2.0,...   → stills/t_<time>.png for checking
 //   node render-reel.js frames [fps]         → .frames/f00000.jpg … and sfx.json
+//   node render-reel.js video [fps] [sub]    → .seg0.mp4 … with motion blur (sub sub-frames averaged per frame) and .sfx.json
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
+const { spawn } = require('child_process');
 
 const dir = __dirname;
 const [mode = 'frames', arg] = process.argv.slice(2);
@@ -29,6 +31,35 @@ async function openPage(browser, tmp) {
         await page.evaluate((t) => window.renderAt(t), t);
         await page.screenshot({ path: path.join(out, `t_${t.toFixed(2)}.png`) });
       }
+    } else if (mode === 'video') {
+      const fps = Number(arg) || 30, sub = Number(process.argv[4]) || 4, shutter = 0.5;
+      const probe = await openPage(browser, tmp);
+      const { dur, sfx, gaps } = await probe.evaluate(() => ({ dur: window.DUR, sfx: window.SFX, gaps: window.GAPS || [] }));
+      fs.writeFileSync(path.join(dir, '.sfx.json'), JSON.stringify({ dur, bar: 240 / 105, sfx, gaps }));
+      await probe.close();
+      const total = Math.round(dur * fps), workers = 4, per = Math.ceil(total / workers);
+      let done = 0;
+      await Promise.all([...Array(workers)].map(async (_, w) => {
+        const a = w * per, b = Math.min(total, a + per);
+        const page = await openPage(browser, tmp);
+        const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(fps * sub), '-c:v', 'mjpeg', '-i', '-',
+          '-vf', `tmix=frames=${sub},select='eq(mod(n\\,${sub})\\,${sub - 1})',setpts=N/(${fps}*TB)`, '-r', String(fps),
+          '-c:v', 'libx264', '-preset', 'fast', '-crf', '12', '-pix_fmt', 'yuv420p', path.join(dir, `.seg${w}.mp4`)], { stdio: ['pipe', 'inherit', 'inherit'] });
+        const closed = new Promise((res, rej) => ff.on('close', (c) => (c === 0 ? res() : rej(new Error('ffmpeg ' + c)))));
+        for (let i = a; i < b; i++) {
+          for (let k = 0; k < sub; k++) {
+            const t = Math.max(0, i / fps + ((k + 0.5) / sub - 0.5) * shutter / fps);
+            await page.evaluate((t) => window.renderAt(t), t);
+            const buf = await page.screenshot({ type: 'jpeg', quality: 94 });
+            if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once('drain', r));
+          }
+          if (++done % 150 === 0) console.log(`${done}/${total}`);
+        }
+        ff.stdin.end();
+        await closed;
+      }));
+      fs.writeFileSync(path.join(dir, '.segs.txt'), [...Array(workers)].map((_, w) => `file '.seg${w}.mp4'`).join('\n') + '\n');
+      console.log(`rendered ${total} frames at ${fps} fps × ${sub} sub-frames`);
     } else {
       const fps = Number(arg) || 30;
       const out = path.join(dir, '.frames');

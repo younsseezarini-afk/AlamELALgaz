@@ -133,41 +133,46 @@ def sfx(kind, length):
             f = 2000 + 3000 * rng.random(); d = rng.random() * 0.5
             out += np.sin(2 * np.pi * f * t) * np.exp(-np.maximum(0, t - d) * 8) * (t > d)
         return out * 0.12
+    if kind == 'riser':
+        f = 200 + 1400 * (t / t[-1]) ** 2
+        tone = 0.25 * np.sin(2 * np.pi * np.cumsum(f) / SR)
+        return (smooth(n, 5) * 1.6 + tone) * (t / t[-1]) ** 2.5
     if kind == 'swell':
         f = 330
         return 0.3 * (np.sin(2 * np.pi * f * t) + 0.5 * np.sin(2 * np.pi * f * 1.5 * t)) * (t / t[-1]) ** 2 * np.exp(-np.maximum(0, t - t[-1] * 0.9) * 20)
     raise ValueError(kind)
 
 
-# ── arrangement (bars are 1-based)
+# ── arrangement
+GAPS = cfg.get('gaps', [])
+def in_gap(x):
+    return any(g0 <= x < g1 for g0, g1 in GAPS)
+
 PROG = [[53, 56, 60, 63, 67], [49, 53, 56, 60], [56, 60, 63, 67], [51, 55, 58, 60]]  # Fm9, Dbmaj7, Abmaj7, Eb6
 ROOTS = [41, 37, 44, 39]
 for b in range(20):
     t0 = b * BAR
-    chord = PROG[b % 4]
-    add(pad(chord, BAR + 0.2), t0, 0.16 if b >= 2 else 0.11)
-    full = 2 <= b <= 18 and b != 14
-    if full:
-        add(sub(ROOTS[b % 4], BEAT * 2), t0, 0.35)
-        add(sub(ROOTS[b % 4], BEAT * 1.5), t0 + BEAT * 2.5, 0.25)
-        add(kick(), t0, 0.55); add(kick(), t0 + BEAT * 1.5, 0.4)
-        add(snare(), t0 + BEAT * 2, 0.32)
-    if b == 14:  # Iterate: three hits handled by sfx; keep a pulse
-        add(sub(ROOTS[b % 4], BEAT * 3), t0, 0.3)
-    if b >= 1 and b != 19:
-        for e in range(8):
-            add(hat(open_=(e % 2 == 1 and b >= 2)), t0 + e * BEAT / 2, 0.06 if e % 2 == 0 else 0.09, pan=0.3 if e % 2 else -0.2)
+    add(pad(PROG[b % 4], BAR + 0.2), t0, 0.15 if b >= 2 else 0.11)
+    drums = 2 <= b <= 18
+    for q in range(4):
+        tb = t0 + q * BEAT
+        if drums and not in_gap(tb):
+            add(kick(), tb, 0.55)
+            if q % 2 == 1:
+                add(snare(), tb, 0.3)
+            add(hat(open_=True), tb + BEAT / 2, 0.08, pan=0.3)
+            add(hat(), tb, 0.05, pan=-0.2)
+            add(sub(ROOTS[b % 4] + (12 if q == 3 else 0), BEAT * 0.9), tb + BEAT / 2, 0.22)
+        elif b == 1:
+            for e in range(2):
+                add(hat(), tb + e * BEAT / 2, 0.05, pan=-0.2)
     if b == 0:
         for e in range(16):
             add(sfx('tick', 0), t0 + e * BEAT / 4, 0.05 if e % 4 else 0.09, pan=-0.2)
-# riser into the drop at bar 3
-t = tt(BAR)
-riser = smooth(rng.standard_normal(len(t)), 6) * (t / t[-1]) ** 3
-add(riser * 0.5, BAR * 1)
 
 GAIN = {'thunk': 0.9, 'slam': 0.75, 'hit': 0.6, 'whoosh': 0.35, 'swish': 0.3, 'click': 0.35, 'tap': 0.35, 'key': 0.4,
         'tick': 0.25, 'ping': 0.3, 'ding': 0.35, 'lock': 0.4, 'pop': 0.45, 'squeak': 0.3, 'slide': 0.35,
-        'stretch': 0.3, 'whir': 0.3, 'shimmer': 0.5, 'swell': 0.35}
+        'stretch': 0.3, 'whir': 0.3, 'shimmer': 0.5, 'swell': 0.35, 'riser': 0.45}
 for c in cfg['sfx']:
     pan = 0.25 if c['type'] in ('click', 'tap', 'tick') else 0.0
     add(sfx(c['type'], c['len']), c['t'], GAIN[c['type']], pan)

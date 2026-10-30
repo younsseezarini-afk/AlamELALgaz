@@ -4,3 +4,5 @@
 .sfx.json
 .reel-tmp.html
 .render-tmp.html
+.seg*.mp4
+.segs.txt
