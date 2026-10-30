@@ -1,0 +1,860 @@
+<title>Type Has Weight</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@100..900&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one dark brand world. Long-scroll production doc: thesis → brand/refs → concept → script → 12 vertical frames → motion & delivery. */
+:root{
+  --void:#06021C; --night:#0E0726; --panel:#140B33; --royal:#4818B8; --violet:#6B3BEA;
+  --lav:#B8A0F8; --mist:#C9B8FF; --ink:#F5F2FF; --dim:#A99BC9; --mute:#6E6390;
+  --line:rgba(184,160,248,.18); --pink:#FF8FB8; --amber:#FFC857;
+  --display:'Inter Tight','Helvetica Neue',Helvetica,Arial,sans-serif;
+  --mono:'Geist Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--void);color:var(--ink);font:400 16px/1.6 var(--display);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px;
+  background-image:radial-gradient(1200px 700px at 80% -10%,rgba(72,24,184,.35),transparent 70%),radial-gradient(900px 600px at -10% 40%,rgba(107,59,234,.12),transparent 70%);background-attachment:fixed}
+.wrap{max-width:1240px;margin:0 auto}
+a{color:var(--lav)}
+h1,h2,h3{text-wrap:balance;margin:0}
+p{margin:0}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--lav)}
+section{padding-block:72px 0}
+.sec-h{display:grid;gap:14px;margin-bottom:32px;max-width:760px}
+.sec-h h2{font-size:clamp(30px,4vw,44px);font-weight:500;letter-spacing:-.02em;line-height:1.08}
+.sec-h p{color:var(--dim);max-width:62ch}
+
+/* hero */
+.hero{padding-block:72px 8px;display:grid;gap:28px}
+.hero h1{font-size:clamp(56px,11vw,148px);line-height:.9;letter-spacing:-.04em;font-weight:200}
+.hero h1 b{font-weight:900;display:block;background:linear-gradient(180deg,#fff 30%,var(--lav));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .lede{font-size:clamp(18px,2vw,22px);color:var(--mist);max-width:56ch;line-height:1.5}
+.meta{display:flex;flex-wrap:wrap;gap:10px}
+.meta span{font:500 13px/1 var(--mono);padding:10px 14px;border:1px solid var(--line);border-radius:999px;color:var(--ink);background:rgba(184,160,248,.05)}
+.meta span em{font-style:normal;color:var(--dim)}
+
+/* brand + refs */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.card{border:1px solid var(--line);border-radius:22px;background:linear-gradient(180deg,rgba(40,22,86,.35),rgba(14,7,38,.5));padding:24px;min-width:0}
+.card h3{font-size:20px;font-weight:600;margin-bottom:14px}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.sw div{border-radius:14px;padding:64px 12px 12px;border:1px solid var(--line);font:500 12px/1.4 var(--mono)}
+.sw div b{display:block;font:600 13px/1.3 var(--display)}
+.spec{display:grid;gap:10px}
+.spec .a{font-size:44px;line-height:1;letter-spacing:-.02em}
+.spec .a .l{color:var(--mist);font-weight:400}
+.spec .a .w{font-weight:500}
+.spec small{font:500 12px/1.4 var(--mono);color:var(--dim)}
+.refs{display:grid;gap:0;margin:0;padding:0;list-style:none}
+.refs li{display:grid;grid-template-columns:44px 1fr;gap:4px 14px;padding:14px 0;border-top:1px solid var(--line)}
+.refs li:first-child{border-top:0;padding-top:0}
+.refs .n{font:600 13px/1.6 var(--mono);color:var(--lav)}
+.refs b{font-weight:600}
+.refs p{grid-column:2;color:var(--dim);font-size:15px}
+
+/* concept */
+.big-idea{font-size:clamp(22px,2.6vw,30px);line-height:1.35;letter-spacing:-.01em;max-width:34ch;font-weight:400}
+.big-idea strong{font-weight:700;color:#fff}
+.big-idea em{font-style:normal;color:var(--lav)}
+.fromto{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:32px}
+.fromto .card p{color:var(--dim)}
+.fromto .k{font:500 12px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.fromto .to .k{color:var(--lav)}
+.fromto .to{border-color:rgba(184,160,248,.45)}
+.fromto h3{font-size:24px;font-weight:500;letter-spacing:-.01em}
+.devices{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:20px}
+.devices div{border-left:2px solid var(--lav);padding:4px 0 4px 16px}
+.devices b{display:block;font-weight:600;margin-bottom:4px}
+.devices p{color:var(--dim);font-size:15px}
+
+/* script table */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:18px}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:15px}
+th,td{text-align:left;vertical-align:top;padding:14px 16px;border-top:1px solid var(--line)}
+th{font:500 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);border-top:0;background:rgba(184,160,248,.05)}
+td.t{font:500 13px/1.5 var(--mono);color:var(--mist);white-space:nowrap;font-variant-numeric:tabular-nums}
+td.s{font-weight:600;white-space:nowrap}
+td.vo{color:#fff;font-size:16px}
+td.os{color:var(--dim)}
+td.os b{color:var(--lav);font-weight:500}
+
+/* storyboard toolbar */
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;align-items:center}
+.tools button{font:500 13px/1 var(--mono);color:var(--ink);background:rgba(184,160,248,.06);border:1px solid var(--line);border-radius:999px;padding:11px 16px;cursor:pointer;display:inline-flex;gap:10px;align-items:center}
+.tools button::before{content:"";width:10px;height:10px;border-radius:50%;border:1.5px solid var(--dim)}
+.tools button[aria-pressed="true"]{border-color:var(--lav);background:rgba(184,160,248,.14)}
+.tools button[aria-pressed="true"]::before{background:var(--lav);border-color:var(--lav)}
+.tools button:focus-visible{outline:2px solid var(--lav);outline-offset:3px}
+.tools .legend{font:500 12px/1.4 var(--mono);color:var(--dim);margin-left:auto}
+.tools .legend i{display:inline-block;width:22px;border-top:2px dashed var(--amber);vertical-align:middle;margin-right:6px}
+
+.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px 28px}
+@media (max-width:1060px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.board{grid-template-columns:minmax(0,1fr)}}
+.sb{display:grid;gap:16px;align-content:start;min-width:0}
+
+/* annotations */
+.ann-h{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:baseline}
+.ann-h .no{font:600 13px/1 var(--mono);color:var(--void);background:var(--lav);border-radius:8px;padding:6px 8px;grid-row:span 2;align-self:start}
+.ann-h h3{font-size:19px;font-weight:600;letter-spacing:-.01em}
+.ann-h time{font:500 12px/1.4 var(--mono);color:var(--dim);font-variant-numeric:tabular-nums}
+.ann dl{display:grid;grid-template-columns:78px 1fr;gap:8px 12px;margin:14px 0 0;font-size:14px;line-height:1.5}
+.ann dt{font:500 11px/1.9 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.ann dd{margin:0;color:var(--dim);min-width:0}
+.ann dd.vo{color:#fff;font-size:15px}
+.ann dd.os{color:var(--mist)}
+
+/* motion & delivery */
+.trans{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.trans li{border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.trans b{font:600 12px/1 var(--mono);color:var(--lav);letter-spacing:.08em}
+.trans span{font-weight:600}
+.trans p{color:var(--dim);font-size:15px}
+.kv{display:grid;grid-template-columns:minmax(120px,max-content) 1fr;gap:10px 18px;font-size:15px;margin:0}
+.kv dt{font:500 12px/1.7 var(--mono);color:var(--lav);text-transform:uppercase;letter-spacing:.1em}
+.kv dd{margin:0;color:var(--dim);min-width:0}
+.kv dd b{color:var(--ink);font-weight:500}
+footer.end{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);color:var(--dim);font:500 13px/1.6 var(--mono)}
+
+/* ─────────────────────────────  FRAMES (1080 × 1920 artboards, scaled)  ───────────────────────────── */
+.fw{position:relative;width:100%;max-width:100%;aspect-ratio:9/16;overflow:hidden;border-radius:20px;background:#06021C;--k:.3;box-shadow:0 0 0 1px var(--line),0 30px 60px rgba(0,0,0,.45)}
+.f{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0;transform:scale(var(--k));overflow:hidden;
+  font-family:var(--display);color:#F5F2FF;background:#07031A;line-height:1.1;font-size:32px}
+.f .bgx{position:absolute;inset:0;background:
+  radial-gradient(1000px 560px at 50% 112%,rgba(108,52,230,.62),transparent 70%),
+  radial-gradient(760px 640px at 92% 4%,rgba(72,24,184,.26),transparent 70%),
+  radial-gradient(600px 500px at 0% 40%,rgba(72,24,184,.12),transparent 70%),
+  linear-gradient(180deg,#07031A 0%,#0B0524 55%,#160A38 100%)}
+.f .floor{position:absolute;left:-60%;right:-60%;bottom:-260px;height:980px;
+  background-image:linear-gradient(rgba(184,160,248,.18) 2px,transparent 2px),linear-gradient(90deg,rgba(184,160,248,.18) 2px,transparent 2px);
+  background-size:190px 190px;background-position:center bottom;transform:perspective(760px) rotateX(74deg);transform-origin:50% 100%;
+  -webkit-mask-image:linear-gradient(to top,#000 5%,transparent 70%);mask-image:linear-gradient(to top,#000 5%,transparent 70%)}
+.f .hd{position:absolute;top:118px;left:72px;right:72px;display:flex;align-items:center;gap:24px;z-index:4}
+.f .av{width:96px;height:96px;border-radius:50%;border:3px solid #B8A0F8;object-fit:cover;box-shadow:0 0 30px rgba(184,160,248,.35)}
+.f .who b{display:block;font-size:32px;font-weight:500;line-height:1.15}
+.f .who span{display:block;font-size:26px;color:#A99BC9}
+.f .ct{margin-left:auto;font-size:30px;color:#A99BC9;display:flex;align-items:center;gap:22px;font-variant-numeric:tabular-nums}
+.f .ct b{color:#fff;font-weight:400}
+.f .ct i{width:96px;height:2px;background:#A99BC9}
+.f .ft{position:absolute;left:72px;right:72px;bottom:104px;display:flex;align-items:center;gap:30px;font-size:22px;letter-spacing:.32em;text-transform:uppercase;color:#A99BC9;z-index:4}
+.f .ft .x{font-size:30px;letter-spacing:0;color:#fff}
+.f .ft .go{margin-left:auto;width:76px;height:76px;border:2px solid #F5F2FF;border-radius:50%;display:grid;place-items:center;letter-spacing:0}
+.f .ft .go svg{width:30px;height:30px}
+
+/* headline system: lavender setup line over white punch line (from the carousel system) */
+.f .h{position:absolute;left:60px;right:60px;text-align:center;letter-spacing:-.025em;line-height:1.02;z-index:3}
+.f .h .l{display:block;color:#C9B8FF;font-weight:400;font-size:76px}
+.f .h .w{display:block;color:#fff;font-weight:500;font-size:124px}
+.f .lever{position:absolute;left:0;right:0;text-align:center;z-index:3}
+.f .chip{display:inline-flex;align-items:center;gap:14px;padding:14px 26px;border-radius:999px;border:2px solid rgba(184,160,248,.38);background:rgba(184,160,248,.08);font:500 24px/1 var(--mono);letter-spacing:.1em;color:#D8CCFF;text-transform:uppercase}
+.f .chip i{width:12px;height:12px;border-radius:50%;background:#B8A0F8;box-shadow:0 0 14px #B8A0F8}
+
+/* readouts */
+.f .tilt{position:absolute;display:inline-flex;gap:16px;align-items:center;padding:16px 26px;border-radius:20px;background:rgba(14,8,36,.78);border:2px solid rgba(184,160,248,.28);font:500 28px/1 var(--mono);color:#EDE6FF;z-index:5;white-space:nowrap;font-variant-numeric:tabular-nums}
+.f .tilt .dot{width:16px;height:16px;border-radius:50%;background:#B8A0F8;box-shadow:0 0 16px #B8A0F8}
+.f .tilt.warn{border-color:rgba(255,143,184,.5)}
+.f .tilt.warn .dot{background:#FF8FB8;box-shadow:0 0 16px #FF8FB8}
+.f .tilt.ok{border-color:#B8A0F8;box-shadow:0 0 40px rgba(184,160,248,.35)}
+.f .tilt small{font-size:22px;color:#A99BC9}
+.f .center-x{left:50%;transform:translateX(-50%)}
+
+/* glass */
+.f .glass{position:absolute;border-radius:32px;background:linear-gradient(180deg,rgba(44,24,96,.6),rgba(16,9,40,.78));border:2px solid rgba(184,160,248,.24);box-shadow:inset 0 2px 0 rgba(255,255,255,.07),0 40px 90px rgba(0,0,0,.45);z-index:3}
+.f .insp{padding:30px 36px;display:grid;gap:22px;font:500 24px/1.2 var(--mono);color:#A99BC9}
+.f .row{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.f .row b{color:#fff;font-weight:500}
+.f .row .arrow{color:#B8A0F8}
+.f .track{height:10px;border-radius:10px;background:rgba(184,160,248,.18);position:relative}
+.f .track .fill{position:absolute;left:0;top:0;bottom:0;border-radius:10px;background:linear-gradient(90deg,#6B3BEA,#B8A0F8)}
+.f .track .knob{position:absolute;top:50%;width:40px;height:40px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 0 8px rgba(184,160,248,.32),0 0 30px rgba(184,160,248,.6)}
+.f .ticks{display:flex;justify-content:space-between;font-size:20px;color:#6E6390}
+
+/* chrome balance beam */
+.f .beam{position:absolute;left:110px;width:860px;height:320px;z-index:2}
+.f .bar{position:absolute;left:0;right:0;top:120px;height:38px;border-radius:8px;transform:rotate(var(--t,0deg));transform-origin:50% 50%;
+  background:linear-gradient(180deg,#F4EDFF 0%,#C2A8FF 12%,#7046E0 36%,#341687 66%,#170A40 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.1),0 18px 50px rgba(120,70,255,.5),0 0 90px rgba(120,70,255,.25)}
+.f .bar::after{content:"";position:absolute;left:3%;right:3%;top:4px;height:5px;border-radius:5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent)}
+.f .fulcrum{position:absolute;left:50%;top:158px;width:150px;height:116px;transform:translateX(-50%);clip-path:polygon(50% 0,100% 100%,0 100%);
+  background:linear-gradient(115deg,#EADFFF 0%,#9A78F2 30%,#4A23B5 62%,#1C0E52 100%)}
+.f .refl{position:absolute;left:4%;right:4%;top:252px;height:70px;background:radial-gradient(closest-side,rgba(160,110,255,.7),transparent);filter:blur(10px)}
+.f .load{position:absolute;bottom:100%;padding-bottom:4px;line-height:.78;white-space:nowrap;color:#fff}
+.f .load.l{left:10px}
+.f .load.r{right:10px}
+
+/* design-tool UI */
+.f .sel{position:absolute;border:3px solid #B8A0F8;z-index:3;pointer-events:none}
+.f .sel i{position:absolute;width:22px;height:22px;background:#fff;border:3px solid #B8A0F8}
+.f .sel .tl{left:-13px;top:-13px}.f .sel .tr{right:-13px;top:-13px}.f .sel .bl{left:-13px;bottom:-13px}.f .sel .br{right:-13px;bottom:-13px}
+.f .dim{position:absolute;background:#B8A0F8;color:#120829;font:600 22px/1 var(--mono);padding:8px 14px;border-radius:8px;white-space:nowrap;z-index:4}
+.f .cur{position:absolute;z-index:7;width:64px;height:76px}
+.f .cur svg{width:64px;height:76px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+.f .cur span{position:absolute;left:50px;top:62px;background:#B8A0F8;color:#120829;font:600 24px/1 var(--display);padding:10px 16px;border-radius:4px 12px 12px 12px;white-space:nowrap}
+.f .ghost{position:absolute;border:3px dashed rgba(184,160,248,.55);border-radius:4px}
+.f .gaze{position:absolute;width:62px;height:62px;border-radius:50%;border:3px solid #FFC857;color:#FFC857;font:600 26px/56px var(--mono);text-align:center;background:rgba(255,200,87,.1);z-index:4}
+
+/* poster component (the demo layout used through the film) */
+.f .poster{position:absolute;border-radius:36px;background:linear-gradient(180deg,rgba(42,24,92,.66),rgba(16,9,40,.82));border:2px solid rgba(184,160,248,.26);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.07),0 60px 120px rgba(0,0,0,.55),0 0 140px rgba(107,59,234,.2);z-index:2}
+.f .poster > *{position:absolute}
+.f .p-eye{font:500 22px/1 var(--mono);letter-spacing:.2em;color:#C9B8FF;text-transform:uppercase;white-space:nowrap}
+.f .p-cta{padding:22px 40px;border-radius:999px;background:linear-gradient(90deg,#6B3BEA,#B8A0F8);color:#fff;font-weight:600;font-size:30px;white-space:nowrap;box-shadow:0 10px 40px rgba(107,59,234,.45)}
+.f .p-meta{font-size:28px;color:#A99BC9;white-space:nowrap}
+
+.f .pill-img{display:inline-block;width:230px;height:108px;border-radius:999px;background-size:cover;background-position:center;vertical-align:-14px;border:2px solid rgba(184,160,248,.4);box-shadow:0 0 40px rgba(107,59,234,.35)}
+.f .img-blend{position:absolute;background-size:cover;background-position:center;-webkit-mask-image:radial-gradient(closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(closest-side,#000 62%,transparent 100%)}
+
+/* annotation layers */
+.f .mg{position:absolute;inset:0;width:1080px;height:1920px;z-index:8;pointer-events:none;display:none}
+.show-guides .f .mg{display:block}
+.f .mg path,.f .mg line{fill:none;stroke:#FFC857;stroke-width:4;stroke-dasharray:14 12;stroke-linecap:round}
+.f .mg text{fill:#FFC857;font:500 25px var(--mono);paint-order:stroke;stroke:#0B0524;stroke-width:9px;stroke-linejoin:round}
+.f .sz{position:absolute;inset:0;z-index:9;pointer-events:none;display:none}
+.show-safe .f .sz{display:block}
+.f .sz i{position:absolute;background:repeating-linear-gradient(45deg,rgba(255,143,184,.22) 0 14px,rgba(255,143,184,.08) 14px 28px);border:2px solid rgba(255,143,184,.6)}
+.f .sz b{position:absolute;font:600 22px/1 var(--mono);color:#FF8FB8;background:#0B0524;padding:6px 10px;border-radius:6px}
+
+/* ambient motion (only adds offsets; the resting state is the key frame) */
+@keyframes wob{0%,100%{transform:rotate(var(--t,0deg))}50%{transform:rotate(calc(var(--t,0deg) - 1.6deg))}}
+@keyframes settle{0%,100%{transform:rotate(0deg)}50%{transform:rotate(.6deg)}}
+@keyframes drift{0%,100%{translate:0 0}50%{translate:-10px 8px}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes float{0%,100%{translate:0 0}50%{translate:0 -14px}}
+@keyframes wipe{0%,100%{--cut:30%}50%{--cut:72%}}
+@property --cut{syntax:'<percentage>';inherits:true;initial-value:30%}
+.animate .f .bar.wob{animation:wob 2.4s ease-in-out infinite}
+.animate .f .bar.settle{animation:settle 3s ease-in-out infinite}
+.animate .f .cur{animation:drift 2.8s ease-in-out infinite}
+.animate .f .glow-pulse{animation:pulse 2.2s ease-in-out infinite}
+.animate .f .floaty{animation:float 4s ease-in-out infinite}
+.animate .f .ba{animation:wipe 5s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.animate .f *{animation:none!important}}
+.export .board{display:block}
+.export .sb{margin-bottom:40px}
+.export .fw{width:1080px!important;height:1920px!important;aspect-ratio:auto;border-radius:0;box-shadow:none}
+.export .f *{animation:none!important}
+.export .f .mg,.export .f .sz{display:none!important}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ah" viewBox="0 0 12 12" refX="7" refY="6" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#FFC857" stroke="none"/>
+    </marker>
+    <linearGradient id="hl" x1="0" x2="1"><stop offset="0" stop-color="#6B3BEA"/><stop offset="1" stop-color="#B8A0F8"/></linearGradient>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">Younsse Ezarini · Kinetic type reel · Refined concept</span>
+  <h1>Type Has<b>Weight.</b></h1>
+  <p class="lede">A 45-second motion reel that turns “The Art of Typography Balance” into something you can feel: words sit on a chrome balance beam, and a designer's cursor fixes the tilt one lever at a time.</p>
+  <div class="meta">
+    <span>45.7 s <em>· 20 bars</em></span><span>9:16 <em>· 1080 × 1920</em></span><span>105 BPM <em>· cuts on downbeats</em></span><span>11 scenes <em>· 12 key frames</em></span><span>EN voiceover <em>· ~150 wpm</em></span>
+  </div>
+</header>
+
+<section id="brand">
+  <div class="sec-h">
+    <span class="eyebrow">01 · What I read from your work</span>
+    <h2>Your brand already has the right world. The reel moves it.</h2>
+    <p>Colors were sampled from your “Design Balance” and “Visual Hierarchy” carousels. Motion techniques come from the five references you sent.</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Palette (sampled)</h3>
+      <div class="sw">
+        <div style="background:#06021C;color:#C9B8FF"><b>Void</b>#06021C</div>
+        <div style="background:#160A38;color:#C9B8FF"><b>Night</b>#160A38</div>
+        <div style="background:#4818B8;color:#F5F2FF"><b>Royal</b>#4818B8</div>
+        <div style="background:#6B3BEA;color:#F5F2FF"><b>Violet</b>#6B3BEA</div>
+        <div style="background:#B8A0F8;color:#120829"><b>Lavender</b>#B8A0F8</div>
+        <div style="background:#C9B8FF;color:#120829"><b>Mist</b>#C9B8FF</div>
+        <div style="background:#F5F2FF;color:#120829"><b>Paper</b>#F5F2FF</div>
+        <div style="background:#FF8FB8;color:#120829"><b>Signal</b>#FF8FB8 · “off-balance” only</div>
+      </div>
+    </div>
+    <div class="card spec">
+      <h3>Type & surfaces</h3>
+      <div class="a"><span class="l">Find the balance.</span><br><span class="w">Refine the layout.</span></div>
+      <small>Your two-tone headline: lavender setup line over a white punch line. Set in Inter Tight (variable 100–900) to match your neo-grotesk and to allow live weight morphs. UI numbers in Geist Mono.</small>
+      <small>Surfaces: near-black violet void, glowing perspective floor, brushed-chrome purple objects, glass cards with violet hairlines, pill chips, avatar header and “× TOPIC” footer.</small>
+    </div>
+    <div class="card" style="grid-column:1/-1">
+      <h3>What each reference gives the reel</h3>
+      <ul class="refs">
+        <li><span class="n">R1</span><b>“your iterations” design-tool canvas</b><p>Floating toolbars, layer panels and a highlight sweep behind a key word. Becomes the Younsse cursor, selection boxes and inspector panels that perform every fix (scenes 3–6).</p></li>
+        <li><span class="n">R2</span><b>Floating frames in z-space</b><p>A camera drifting through iterations hung in 3D space. Becomes the “Nudge. Step back.” fly-through of layout versions (scene 8).</p></li>
+        <li><span class="n">R3</span><b>Dark purple UI with gradient text and a click</b><p>Glass modal on violet, gradient words, a hand-cursor click. Becomes the glowing “Saturday” word and the Save click (scenes 5, 10).</p></li>
+        <li><span class="n">R4</span><b>3D objects orbiting a glow, “[grow]” bracket</b><p>Depth-of-field objects and a bracket-selected word. Becomes your chrome objects inside sentences and the selection bracket on “ugly” (scenes 1, 7).</p></li>
+        <li><span class="n">R5</span><b>UI cards with 3D objects, pills, timeline scrubber</b><p>Product cards, pill tags, a scrubbing handle. Becomes the before/after scrub handle and the lever chips (scenes 3–6, 9).</p></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="concept">
+  <div class="sec-h">
+    <span class="eyebrow">02 · Refined concept</span>
+    <h2>One physical metaphor instead of a list of tips.</h2>
+  </div>
+  <p class="big-idea"><strong>Every word has weight.</strong> We open on a layout that's literally sliding off the screen, drop its heaviest word onto a <em>chrome balance beam</em>, then fix the tilt with four levers: <em>size, weight, color, space</em>. A readout counts the tilt down from 14.0° to 0.0°. When the beam sits still, the lesson is done.</p>
+  <div class="fromto">
+    <div class="card"><div class="k">Original</div><h3>The Art of Typography Balance</h3><p>A topic statement as the hook, then definition, tips and outro. Reads like a carousel played as video.</p></div>
+    <div class="card to"><div class="k">Refined</div><h3>Type Has Weight</h3><p>A diagnosis as the hook (“isn't ugly, it's unbalanced”), one metaphor that stays on screen, four satisfying UI interactions, a numeric scoreboard and an ending that loops into the first frame.</p></div>
+  </div>
+  <div class="devices">
+    <div><b>The beam</b><p>Your chrome seesaw from “Design Balance”, rebuilt so words can sit on it. It doubles as a UI slider.</p></div>
+    <div><b>The tilt readout</b><p>A mono chip that turns from pink to lavender as the angle reaches 0.0°.</p></div>
+    <div><b>The Younsse cursor</b><p>A named multiplayer cursor makes every fix, so the viewer watches a designer work.</p></div>
+    <div><b>Two-tone headlines</b><p>Your lavender-over-white headline pattern, animated line by line on the beat.</p></div>
+    <div><b>Objects in sentences</b><p>Your chrome renders sit inside the words as image pills, like the “I took control” reference.</p></div>
+  </div>
+</section>
+
+<section id="script">
+  <div class="sec-h">
+    <span class="eyebrow">03 · Revised script</span>
+    <h2>Written to the picture, timed to the bar.</h2>
+    <p>Each voiceover sentence lands on the action it describes. Times are locked to 105 BPM (one bar = 2.29 s).</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Scene</th><th>Time</th><th>Voiceover</th><th>On screen</th></tr></thead>
+      <tbody>
+        <tr><td class="s">01 Hook</td><td class="t">0:00.0–0:04.6</td><td class="vo">Your layout isn't ugly. It's unbalanced.</td><td class="os">“ugly” selected and struck · <b>It's unbalanced.</b> letters tumble</td></tr>
+        <tr><td class="s">02 The rule</td><td class="t">0:04.6–0:09.1</td><td class="vo">Every word has weight. And your eye feels it before it reads it.</td><td class="os"><b>Every word</b> / has weight. · gaze path 1 → 2</td></tr>
+        <tr><td class="s">03 Size</td><td class="t">0:09.1–0:13.7</td><td class="vo">Size is the heaviest lever. Pick one hero, then scale down the rest.</td><td class="os">Lever 01 · <b>Pick one hero.</b> · scale 128 / 64 / 32 / 16</td></tr>
+        <tr><td class="s">04 Weight</td><td class="t">0:13.7–0:18.3</td><td class="vo">Weight works too. A big, light word can balance a small, bold one.</td><td class="os">Lever 02 · <b>Light balances bold.</b> · wght 900 → 200</td></tr>
+        <tr><td class="s">05 Color</td><td class="t">0:18.3–0:22.9</td><td class="vo">Color adds weight. One bright word can hold up a whole paragraph.</td><td class="os">Lever 03 · <b>One word. All eyes.</b></td></tr>
+        <tr><td class="s">06 Space</td><td class="t">0:22.9–0:27.4</td><td class="vo">Space is weight you can't see. Give your key line room to breathe.</td><td class="os">Lever 04 · <b>Space is weight</b> / you can't see.</td></tr>
+        <tr><td class="s">07 Axis</td><td class="t">0:27.4–0:32.0</td><td class="vo">Center it for calm. Offset it for energy, then counter the heavy side.</td><td class="os"><b>Center it for calm.</b> · Offset it for energy.</td></tr>
+        <tr><td class="s">08 Iterate</td><td class="t">0:32.0–0:34.3</td><td class="vo">Then nudge, step back, and nudge again.</td><td class="os">Nudge. / Step back. / Nudge again.</td></tr>
+        <tr><td class="s">09 Payoff</td><td class="t">0:34.3–0:38.9</td><td class="vo">Same words. Same space. Now it sits still.</td><td class="os"><b>Same words.</b> / Now it sits still. · 0.0°</td></tr>
+        <tr><td class="s">10 Takeaway</td><td class="t">0:38.9–0:43.4</td><td class="vo">Type has weight. Design with it. Save this for your next layout.</td><td class="os"><b>Type has weight.</b> / Design with it. · Save</td></tr>
+        <tr><td class="s">11 Loop</td><td class="t">0:43.4–0:45.7</td><td class="vo">Follow for more.</td><td class="os">Profile card · the four levers · next word drops in</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="storyboard">
+  <div class="sec-h">
+    <span class="eyebrow">04 · Storyboard</span>
+    <h2>Twelve key frames, 9:16.</h2>
+    <p>Every frame is built at 1080 × 1920 in your palette. Dashed amber lines are animator notes, not part of the picture. Turn them off to see the clean frame.</p>
+  </div>
+  <div class="tools" role="group" aria-label="Storyboard view options">
+    <button type="button" id="t-guides" aria-pressed="true">Motion notes</button>
+    <button type="button" id="t-safe" aria-pressed="false">Reels safe zones</button>
+    <button type="button" id="t-anim" aria-pressed="true">Ambient motion</button>
+    <span class="legend"><i></i>animator note</span>
+  </div>
+
+  <div class="board">
+
+  <!-- F01 ─────────────── HOOK A -->
+  <article class="sb" id="f01">
+    <div class="fw"><div class="f">
+      <div class="h" style="top:300px">
+        <span class="w" style="font-size:134px">Your layout</span>
+        <span class="w" style="font-size:134px">isn't <span style="position:relative;display:inline-block;color:#C9B8FF">ugly<span style="position:absolute;left:-6px;right:-6px;top:52%;height:9px;background:#FF8FB8;border-radius:6px;transform:rotate(-5deg);box-shadow:0 0 20px rgba(255,143,184,.6)"></span><span class="sel" style="left:-16px;right:-16px;top:-2px;bottom:-14px"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span></span>.</span>
+      </div>
+      <div class="cur" style="left:772px;top:566px"><svg viewBox="0 0 40 48"><path d="M3 3 L3 39 L12.5 30 L19 45 L26 42 L19.5 27.5 L33 27.5 Z" fill="#B8A0F8" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg><span>Younsse</span></div>
+      <div class="tilt warn" style="right:72px;top:770px"><span class="dot"></span>Tilt 7.0°</div>
+      <div class="poster" style="left:170px;top:880px;width:720px;height:740px;transform:rotate(7deg)">
+        <div class="p-eye" style="left:44px;top:40px">Design workshop</div>
+        <div style="right:-74px;top:96px;text-align:right;font-size:120px;font-weight:900;line-height:.86;text-transform:uppercase;letter-spacing:-.03em">Build<br>a clear<br>visual<br>identity</div>
+        <div class="p-meta" style="left:44px;bottom:150px;font-size:22px">Saturday · 10:00 AM</div>
+        <div class="p-cta" style="left:44px;bottom:56px;font-size:22px;padding:14px 24px">Book your seat</div>
+      </div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M720 1690 C 820 1700 900 1680 960 1640" marker-end="url(#ah)"/><text x="560" y="1740">poster keeps sliding ↘</text><path d="M900 640 C 930 600 920 560 880 548" marker-end="url(#ah)"/><text x="610" y="690">select → strike</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">01</span><h3>Hook · “isn't ugly”</h3><time>0:00.0 – 0:02.3 · bar 1</time></div>
+      <dl>
+        <dt>Motion</dt><dd>Cold open on a tilted workshop poster that's already drifting. Headline types on word by word. The cursor double-clicks “ugly”, selection snaps on, a pink strike draws left to right.</dd>
+        <dt>VO</dt><dd class="vo">“Your layout isn't ugly.”</dd>
+        <dt>On screen</dt><dd class="os">Your layout / isn't <s>ugly</s>.</dd>
+        <dt>Out</dt><dd>Backspace deletes “ugly”; the poster's tilt accelerates (match on action).</dd>
+        <dt>SFX</dt><dd>Two soft clicks, marker squeak on the strike.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <!-- F02 ─────────────── HOOK B -->
+  <article class="sb" id="f02">
+    <div class="fw"><div class="f">
+      <div class="h" style="top:290px">
+        <span class="w" style="font-size:134px">It's</span>
+        <span class="w" style="font-size:150px;font-weight:600;letter-spacing:-.03em"><i style="display:inline-block;font-style:normal">u</i><i style="display:inline-block;font-style:normal">n</i><i style="display:inline-block;font-style:normal;transform:translateY(3px) rotate(1deg)">b</i><i style="display:inline-block;font-style:normal;transform:translateY(8px) rotate(3deg)">a</i><i style="display:inline-block;font-style:normal;transform:translateY(16px) rotate(6deg)">l</i><i style="display:inline-block;font-style:normal;transform:translateY(28px) rotate(10deg)">a</i><i style="display:inline-block;font-style:normal;transform:translateY(46px) rotate(15deg);color:#E3D8FF">n</i><i style="display:inline-block;font-style:normal;transform:translateY(72px) rotate(22deg);color:#D3C3FF">c</i><i style="display:inline-block;font-style:normal;transform:translateY(106px) rotate(31deg);color:#C9B8FF">e</i><i style="display:inline-block;font-style:normal;transform:translateY(150px) rotate(42deg);color:#B8A0F8">d</i><i style="display:inline-block;font-style:normal;transform:translateY(204px) rotate(56deg);color:#B8A0F8">.</i></span>
+      </div>
+      <div class="tilt warn" style="left:72px;top:760px"><span class="dot glow-pulse"></span>Tilt 14.0°</div>
+      <div style="position:absolute;left:96px;top:1010px;width:150px;height:4px;border-radius:4px;background:linear-gradient(90deg,transparent,rgba(184,160,248,.5));transform:rotate(14deg)"></div>
+      <div style="position:absolute;left:70px;top:1090px;width:210px;height:4px;border-radius:4px;background:linear-gradient(90deg,transparent,rgba(184,160,248,.4));transform:rotate(14deg)"></div>
+      <div style="position:absolute;left:110px;top:1180px;width:130px;height:4px;border-radius:4px;background:linear-gradient(90deg,transparent,rgba(184,160,248,.3));transform:rotate(14deg)"></div>
+      <div class="poster" style="left:250px;top:900px;width:700px;height:720px;transform:rotate(14deg)">
+        <div class="p-eye" style="right:40px;top:44px">Design workshop</div>
+        <div style="right:-110px;top:210px;text-align:right;font-size:118px;font-weight:900;line-height:.86;text-transform:uppercase;letter-spacing:-.03em">Build<br>a clear<br>visual<br>identity</div>
+        <div class="p-meta" style="right:40px;bottom:126px;font-size:22px">Saturday · 10:00 AM</div>
+        <div class="p-cta" style="right:22px;bottom:36px;font-size:22px;padding:14px 24px;transform:rotate(-4deg)">Book your seat</div>
+      </div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M520 690 C 700 720 820 800 880 900" marker-end="url(#ah)"/><text x="560" y="672">letters slide downhill · 30 ms stagger</text><path d="M180 1520 L 330 1680" marker-end="url(#ah)"/><text x="72" y="1500">whole card rotates 7° → 14°</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">02</span><h3>Hook · “unbalanced”</h3><time>0:02.3 – 0:04.6 · bar 2</time></div>
+      <dl>
+        <dt>Motion</dt><dd>“unbalanced” sets in, then its letters sag right like they're sliding off a tilted shelf. The poster swings to 14° and its parts pile into the low corner. The tilt chip pulses pink.</dd>
+        <dt>VO</dt><dd class="vo">“It's unbalanced.”</dd>
+        <dt>On screen</dt><dd class="os">It's unbalanced.</dd>
+        <dt>Out</dt><dd>Gravity drop: “BUILD” falls out of the poster and lands on the beam in scene 02.</dd>
+        <dt>SFX</dt><dd>Rising creak, woody slide, then a short silence before the drop.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <!-- F03 ─────────────── THE RULE -->
+  <article class="sb" id="f03">
+    <div class="fw"><div class="f">
+      <div class="h" style="top:300px"><span class="l" style="font-size:88px">Every word</span><span class="w" style="font-size:142px">has weight.</span></div>
+      <div class="beam" style="top:1010px">
+        <div class="bar" style="--t:-12deg">
+          <div class="load l" style="left:-34px;font-size:150px;font-weight:900;letter-spacing:-.03em">BUILD<span class="gaze" style="right:-70px;top:-60px">1</span></div>
+          <div class="load r" style="font-size:40px;font-weight:400">10:00 AM<span class="gaze" style="right:-30px;top:-86px">2</span></div>
+        </div>
+        <div class="fulcrum"></div><div class="refl"></div>
+      </div>
+      <div class="glass insp" style="left:150px;right:150px;top:1420px">
+        <div class="row"><span>VISUAL WEIGHT</span><b style="color:#FF8FB8">Tilt 12.0°</b></div>
+        <div class="track"><div class="fill" style="width:86%"></div></div>
+        <div class="row"><b>L 86</b><b>R 14</b></div>
+      </div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M300 640 L 300 900" marker-end="url(#ah)"/><text x="330" y="720">BUILD drops in</text><text x="330" y="756">1 overshoot · “thunk”</text><path d="M330 870 C 520 760 760 820 870 950" style="stroke-dasharray:4 12"/><text x="640" y="760">gaze path 1 → 2</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">03</span><h3>The rule · every word has weight</h3><time>0:04.6 – 0:09.1 · bars 3–4</time></div>
+      <dl>
+        <dt>Motion</dt><dd>“BUILD” drops onto the left end of a chrome beam. The beam slams to 12°, overshoots once and settles. Amber gaze markers pop 1 then 2: the eye hits the heavy word first. The weight meter fills to 86/14.</dd>
+        <dt>VO</dt><dd class="vo">“Every word has weight. And your eye feels it before it reads it.”</dd>
+        <dt>On screen</dt><dd class="os">Every word / has weight.</dd>
+        <dt>Out</dt><dd>Push in on “BUILD”; a selection box snaps around it (UI match cut).</dd>
+        <dt>SFX</dt><dd>Low metallic thunk on the downbeat, two soft pings for the gaze markers.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <!-- F04 ─────────────── LEVER 01 SIZE -->
+  <article class="sb" id="f04">
+    <div class="fw"><div class="f">
+      <div class="lever" style="top:278px"><span class="chip"><i></i>Lever 01 · Size</span></div>
+      <div class="h" style="top:370px"><span class="l" style="font-size:58px">Size is the heaviest lever.</span><span class="w" style="font-size:122px">Pick one hero.</span></div>
+      <div class="glass" style="left:72px;right:72px;top:650px;height:290px;padding:30px 44px;display:flex;align-items:flex-end;justify-content:space-between">
+        <div style="display:grid;gap:14px;justify-items:start"><span style="font-size:128px;font-weight:700;line-height:.8">Aa</span><span style="font:500 22px var(--mono);color:#C9B8FF">128 · HERO</span></div>
+        <div style="display:grid;gap:14px;justify-items:start"><span style="font-size:64px;font-weight:600;line-height:.8">Aa</span><span style="font:500 22px var(--mono);color:#A99BC9">64 · SUB</span></div>
+        <div style="display:grid;gap:14px;justify-items:start"><span style="font-size:32px;font-weight:500;line-height:.8">Aa</span><span style="font:500 22px var(--mono);color:#A99BC9">32 · BODY</span></div>
+        <div style="display:grid;gap:14px;justify-items:start"><span style="font-size:16px;font-weight:500;line-height:.8">Aa</span><span style="font:500 22px var(--mono);color:#A99BC9">16 · META</span></div>
+        <span class="chip" style="position:absolute;right:30px;top:26px;font-size:20px;padding:10px 18px">×2 scale</span>
+      </div>
+      <div class="beam" style="top:1060px">
+        <div class="bar wob" style="--t:-4deg">
+          <div class="load l" style="left:10px;font-size:128px;font-weight:900;letter-spacing:-.03em">
+            <span class="ghost" style="left:-6px;bottom:2px;width:600px;height:150px"></span>
+            BUILD
+            <span class="sel" style="left:-14px;right:-14px;top:-14px;bottom:-8px"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span>
+            <span class="dim" style="left:50%;bottom:-62px;transform:translateX(-50%);font-size:20px">180 → 128 px</span>
+          </div>
+          <div class="load r" style="font-size:40px;font-weight:400">10:00 AM</div>
+        </div>
+        <div class="fulcrum"></div><div class="refl"></div>
+      </div>
+      <div class="cur" style="left:540px;top:1010px"><svg viewBox="0 0 40 48"><path d="M3 3 L3 39 L12.5 30 L19 45 L26 42 L19.5 27.5 L33 27.5 Z" fill="#B8A0F8" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg><span>Younsse</span></div>
+      <div class="tilt center-x" style="top:1440px"><span class="dot"></span>Tilt 4.0° <small>was 12.0°</small></div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M700 1000 L 560 1030" marker-end="url(#ah)"/><text x="660" y="980">drag corner in</text><path d="M960 860 C 1000 960 980 1040 930 1080" marker-end="url(#ah)"/><text x="690" y="1580">beam lifts as size drops</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">04</span><h3>Lever 01 · Size</h3><time>0:09.1 – 0:13.7 · bars 5–6</time></div>
+      <dl>
+        <dt>Motion</dt><dd>The cursor drags the corner handle in. A dashed ghost keeps the old 180 px size. The beam rises in sync with the drag. The type-scale card builds left to right, one size per beat: 128 / 64 / 32 / 16.</dd>
+        <dt>VO</dt><dd class="vo">“Size is the heaviest lever. Pick one hero, then scale down the rest.”</dd>
+        <dt>On screen</dt><dd class="os">Lever 01 · Size — Pick one hero.</dd>
+        <dt>Out</dt><dd>The drag line extends sideways and becomes the weight slider track in scene 04 (shape match).</dd>
+        <dt>SFX</dt><dd>Rubber-band stretch, four ticks for the scale steps.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <!-- F05 ─────────────── LEVER 02 WEIGHT -->
+  <article class="sb" id="f05">
+    <div class="fw"><div class="f">
+      <div class="lever" style="top:278px"><span class="chip"><i></i>Lever 02 · Weight</span></div>
+      <div class="h" style="top:370px"><span class="l" style="font-size:58px">Weight works too.</span><span class="w" style="font-size:106px">Light balances bold.</span></div>
+      <div class="glass insp" style="left:72px;right:72px;top:640px">
+        <div class="row"><span>FONT WEIGHT · wght</span><b>900 <span class="arrow">→</span> 200</b></div>
+        <div class="track" style="margin-block:10px"><div class="fill" style="width:12.5%"></div><div class="knob" style="left:12.5%"></div></div>
+        <div class="ticks"><span>100</span><span>300</span><span>500</span><span>700</span><span>900</span></div>
+      </div>
+      <div class="beam" style="top:1040px">
+        <div class="bar settle">
+          <div class="load l" style="left:0;font-size:176px;font-weight:200;letter-spacing:-.02em">
+            <span style="position:absolute;left:-44px;bottom:4px;font-weight:900;color:rgba(184,160,248,.10)">Light</span>
+            <span style="position:absolute;left:-33px;bottom:4px;font-weight:700;color:rgba(184,160,248,.16)">Light</span>
+            <span style="position:absolute;left:-22px;bottom:4px;font-weight:500;color:rgba(184,160,248,.24)">Light</span>
+            <span style="position:absolute;left:-11px;bottom:4px;font-weight:300;color:rgba(184,160,248,.36)">Light</span>
+            <span style="position:relative">Light</span>
+          </div>
+          <div class="load r" style="font-size:80px;font-weight:900;letter-spacing:-.02em">BOLD</div>
+        </div>
+        <div class="fulcrum"></div><div class="refl"></div>
+      </div>
+      <div class="cur" style="left:240px;top:780px"><svg viewBox="0 0 40 48"><path d="M3 3 L3 39 L12.5 30 L19 45 L26 42 L19.5 27.5 L33 27.5 Z" fill="#B8A0F8" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg><span>Younsse</span></div>
+      <div class="tilt ok center-x" style="top:1430px"><span class="dot"></span>Tilt 0.0° ✓</div>
+      <div style="position:absolute;left:0;right:0;top:1560px;text-align:center;font:500 26px var(--mono);color:#A99BC9;letter-spacing:.04em">big + light  =  small + bold</div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M820 760 L 260 760" marker-end="url(#ah)"/><text x="400" y="736">knob 900 → 200 · 1.2 s ease-in-out</text><text x="100" y="1000">onion-skin trail of each weight</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">05</span><h3>Lever 02 · Weight</h3><time>0:13.7 – 0:18.3 · bars 7–8</time></div>
+      <dl>
+        <dt>Motion</dt><dd>The cursor slides the wght knob from 900 to 200 and “Light” morphs live, leaving an onion-skin trail of each weight. As it thins, the beam rises and locks level against a small, black “BOLD”. The readout flips to 0.0° with a lavender glow.</dd>
+        <dt>VO</dt><dd class="vo">“Weight works too. A big, light word can balance a small, bold one.”</dd>
+        <dt>On screen</dt><dd class="os">Lever 02 · Weight — Light balances bold.</dd>
+        <dt>Out</dt><dd>The thin strokes of “Light” unravel into lines of running text (text-to-texture morph).</dd>
+        <dt>SFX</dt><dd>Smooth slider whir, satisfying lock click at 0.0°.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <!-- F06 ─────────────── LEVER 03 COLOR -->
+  <article class="sb" id="f06">
+    <div class="fw"><div class="f">
+      <div class="lever" style="top:278px"><span class="chip"><i></i>Lever 03 · Color</span></div>
+      <div class="h" style="top:370px"><span class="l" style="font-size:58px">Color adds weight.</span><span class="w" style="font-size:100px">One word. All eyes.</span></div>
+      <div class="glass" style="left:240px;right:240px;top:650px;height:150px;display:flex;align-items:center;justify-content:center;gap:30px">
+        <span style="width:62px;height:62px;border-radius:50%;background:#3A2A5C"></span>
+        <span style="width:62px;height:62px;border-radius:50%;background:#6E6390"></span>
+        <span style="width:62px;height:62px;border-radius:50%;background:#A99BC9"></span>
+        <span style="width:78px;height:78px;border-radius:50%;background:#B8A0F8;box-shadow:0 0 0 6px #0E0726,0 0 0 10px #B8A0F8,0 0 40px #B8A0F8"></span>
+        <span style="width:62px;height:62px;border-radius:50%;background:#F5F2FF"></span>
+      </div>
+      <span class="dim" style="left:50%;top:830px;transform:translateX(-50%)">#B8A0F8 · lavender</span>
+      <div class="cur" style="left:620px;top:730px"><svg viewBox="0 0 40 48"><path d="M3 3 L3 39 L12.5 30 L19 45 L26 42 L19.5 27.5 L33 27.5 Z" fill="#B8A0F8" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg><span>Younsse</span></div>
+      <div class="beam" style="top:1080px">
+        <div class="bar settle">
+          <div class="load l" style="left:0;width:400px;white-space:normal;font-size:25px;line-height:1.38;color:#6E6390;font-weight:400">Two hours on type pairing, grids and spacing. Bring a laptop and one layout you want to fix. Coffee is on us. Seats are limited to twenty, so book early and arrive on time.</div>
+          <div class="load r" style="font-size:96px;font-weight:600;letter-spacing:-.02em">
+            <span class="glow-pulse" style="position:absolute;inset:-60px -40px;background:radial-gradient(closest-side,rgba(184,160,248,.45),transparent);filter:blur(10px)"></span>
+            <span style="position:relative;background:linear-gradient(180deg,#FFFFFF 10%,#C9B8FF 55%,#8D62FF 100%);-webkit-background-clip:text;background-clip:text;color:transparent">Saturday</span>
+          </div>
+        </div>
+        <div class="fulcrum"></div><div class="refl"></div>
+      </div>
+      <div class="tilt ok center-x" style="top:1470px"><span class="dot"></span>Tilt 0.0° ✓ <small>6 lines = 1 word</small></div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M640 860 C 760 930 820 960 840 990" marker-end="url(#ah)"/><text x="700" y="900">color pours into the word</text><text x="90" y="1290">paragraph dims to #6E6390</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">06</span><h3>Lever 03 · Color</h3><time>0:18.3 – 0:22.9 · bars 9–10</time></div>
+      <dl>
+        <dt>Motion</dt><dd>A swatch strip slides up; the cursor clicks lavender. The color pours down into “Saturday” as a gradient fill with a glow aura, while the six-line paragraph dims. The beam holds level: one bright word against a whole block.</dd>
+        <dt>VO</dt><dd class="vo">“Color adds weight. One bright word can hold up a whole paragraph.”</dd>
+        <dt>On screen</dt><dd class="os">Lever 03 · Color — One word. All eyes.</dd>
+        <dt>Out</dt><dd>The glow aura stretches into a vertical bar, which becomes a spacing redline in scene 06.</dd>
+        <dt>SFX</dt><dd>Glassy tap, shimmer as the gradient fills.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <!-- F07 ─────────────── LEVER 04 SPACE -->
+  <article class="sb" id="f07">
+    <div class="fw"><div class="f">
+      <div class="lever" style="top:278px"><span class="chip"><i></i>Lever 04 · Space</span></div>
+      <div class="h" style="top:370px"><span class="l" style="font-size:76px">Space is weight</span><span class="w" style="font-size:118px">you can't see.</span></div>
+      <div class="poster" style="left:120px;top:650px;width:840px;height:820px">
+        <div class="p-eye" style="left:96px;top:96px">Design workshop</div>
+        <div style="left:96px;top:166px;font-size:78px;font-weight:600;line-height:1.3;letter-spacing:-.02em">Build a clear<br><span style="color:#C9B8FF">visual identity.</span></div>
+        <div style="left:96px;top:418px;width:560px;font-size:28px;line-height:1.45;color:#A99BC9">Two hours on type pairing, grids and spacing.</div>
+        <div style="left:96px;top:540px;width:648px;height:96px;border-radius:12px;background:repeating-linear-gradient(-45deg,rgba(184,160,248,.16) 0 10px,transparent 10px 22px);border:2px dashed rgba(184,160,248,.4)"></div>
+        <div style="left:120px;top:574px;font:500 22px var(--mono);color:#C9B8FF;letter-spacing:.06em">EMPTY SPACE · STILL WEIGHT</div>
+        <div class="p-meta" style="left:96px;bottom:96px">Saturday · 10:00 AM</div>
+        <div class="p-cta" style="right:96px;bottom:76px;font-size:26px;padding:18px 32px">Book your seat</div>
+        <!-- redlines -->
+        <div style="left:150px;top:0;width:3px;height:96px;background:#FF8FB8"></div><span class="dim" style="left:164px;top:30px;background:#FF8FB8">96</span>
+        <div style="left:0;top:108px;width:96px;height:3px;background:#FF8FB8"></div>
+        <div style="left:560px;top:370px;width:3px;height:48px;background:#FF8FB8"></div><span class="dim" style="left:576px;top:378px;background:#FF8FB8">48</span>
+        <div style="left:724px;top:180px;width:24px;height:180px;border:3px solid #FF8FB8;border-left:0"></div><span class="dim" style="left:660px;top:250px;background:#FF8FB8;transform:translateX(100%)">LH 130%</span>
+      </div>
+      <div class="glass insp floaty" style="left:568px;top:1452px;width:440px;padding:26px 30px;gap:16px;font-size:22px">
+        <div class="row"><span>Line height</span><b>100 <span class="arrow">→</span> 130%</b></div>
+        <div class="row"><span>Tracking</span><b>0 <span class="arrow">→</span> 1%</b></div>
+        <div class="row"><span>Margins</span><b>24 <span class="arrow">→</span> 96</b></div>
+      </div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M90 760 L 90 1400" marker-start="url(#ah)" marker-end="url(#ah)"/><text x="40" y="1560">text block expands from</text><text x="40" y="1596">cramped → 96 px margins</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">07</span><h3>Lever 04 · Space</h3><time>0:22.9 – 0:27.4 · bars 11–12</time></div>
+      <dl>
+        <dt>Motion</dt><dd>The poster starts cramped. Pink redlines measure it, then everything breathes outward to 96 / 48 spacing while the inspector values tick up. A hatched block reveals the empty space as a shape with its own weight.</dd>
+        <dt>VO</dt><dd class="vo">“Space is weight you can't see. Give your key line room to breathe.”</dd>
+        <dt>On screen</dt><dd class="os">Lever 04 · Space — Space is weight / you can't see.</dd>
+        <dt>Out</dt><dd>The redlines rotate and merge into one vertical axis that splits the frame in scene 07.</dd>
+        <dt>SFX</dt><dd>Soft inhale swell as the layout expands, ruler ticks on each measurement.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <!-- F08 ─────────────── AXIS -->
+  <article class="sb" id="f08">
+    <div class="fw"><div class="f">
+      <div style="position:absolute;left:539px;top:280px;width:2px;height:680px;background:repeating-linear-gradient(180deg,rgba(184,160,248,.6) 0 14px,transparent 14px 26px)"></div>
+      <div style="position:absolute;left:72px;top:290px;font:500 22px var(--mono);letter-spacing:.18em;color:#A99BC9">SYMMETRY</div>
+      <div class="h" style="top:430px"><span class="w" style="font-size:130px">Center it</span><span class="w" style="font-size:104px;font-weight:400;margin-top:30px">for <span class="pill-img" style="background-image:url(assets/arcs.jpg)"></span> calm.</span></div>
+      <div style="position:absolute;left:72px;right:72px;top:1000px;height:3px;background:linear-gradient(90deg,transparent,#B8A0F8,transparent);box-shadow:0 0 30px #B8A0F8"></div>
+      <div style="position:absolute;right:72px;top:1040px;font:500 22px var(--mono);letter-spacing:.18em;color:#A99BC9">ASYMMETRY</div>
+      <svg style="position:absolute;left:0;top:0;z-index:1" width="1080" height="1920" viewBox="0 0 1080 1920"><line x1="90" y1="1100" x2="1000" y2="1640" stroke="rgba(184,160,248,.5)" stroke-width="3" stroke-dasharray="14 12"/></svg>
+      <div style="position:absolute;left:72px;top:1090px;font-size:156px;font-weight:700;letter-spacing:-.035em;line-height:1;z-index:3">Offset it</div>
+      <div style="position:absolute;left:72px;top:1270px;font-size:92px;font-weight:400;letter-spacing:-.02em;z-index:3">for <span class="pill-img" style="background-image:url(assets/spheres.jpg);width:210px;height:100px"></span> energy.</div>
+      <div style="position:absolute;right:72px;top:1500px;text-align:right;font-size:36px;color:#C9B8FF;line-height:1.3;z-index:3">then counter<br>the heavy side <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#B8A0F8;box-shadow:0 0 18px #B8A0F8;vertical-align:2px;margin-left:6px"></span></div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M540 990 L 540 1010" /><text x="580" y="980">redlines merge into the axis</text><path d="M560 1460 C 700 1480 800 1500 880 1490" marker-end="url(#ah)"/><text x="360" y="1440">counterweight slides in</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">08</span><h3>Axis · calm vs energy</h3><time>0:27.4 – 0:32.0 · bars 13–14</time></div>
+      <dl>
+        <dt>Motion</dt><dd>Top half: a vertical axis draws down and “Center it for calm.” mirrors open from it, with your chrome arcs inside the sentence. Bottom half: the axis tips to a diagonal, “Offset it” slams in left-heavy, then a small lavender caption slides in bottom-right as the counterweight.</dd>
+        <dt>VO</dt><dd class="vo">“Center it for calm. Offset it for energy, then counter the heavy side.”</dd>
+        <dt>On screen</dt><dd class="os">Center it for [arcs] calm. · Offset it for [spheres] energy.</dd>
+        <dt>Out</dt><dd>Camera pulls back in z-space; the whole frame becomes one card among many iterations.</dd>
+        <dt>SFX</dt><dd>Mirror whoosh (stereo split), heavy slam, light tick for the counterweight.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <!-- F09 ─────────────── ITERATE (z-space flythrough) -->
+  <article class="sb" id="f09">
+    <div class="fw"><div class="f">
+      <div style="position:absolute;left:72px;top:290px;z-index:3;letter-spacing:-.03em;line-height:1">
+        <div style="font-size:120px;font-weight:200">Nudge.</div>
+        <div style="font-size:120px;font-weight:500;color:#C9B8FF;margin-left:120px">Step back.</div>
+        <div style="font-size:120px;font-weight:900;margin-left:40px">Nudge again.</div>
+      </div>
+      <div style="position:absolute;left:180px;top:780px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#E9DDFF,#7B4DFF 45%,#1E0B5A 80%);filter:blur(14px);opacity:.55"></div>
+      <div style="position:absolute;right:120px;top:1580px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#E9DDFF,#7B4DFF 45%,#1E0B5A 80%);filter:blur(8px);opacity:.6"></div>
+      <div style="position:absolute;inset:700px 0 260px 0;perspective:1400px;z-index:2">
+        <div class="poster" style="left:110px;top:60px;width:300px;height:420px;transform:translateZ(-620px) rotateY(20deg) rotate(14deg);opacity:.55"></div>
+        <div class="poster" style="left:660px;top:10px;width:300px;height:420px;transform:translateZ(-460px) rotateY(-18deg) rotate(9deg);opacity:.65"></div>
+        <div class="poster" style="left:40px;top:430px;width:300px;height:420px;transform:translateZ(-260px) rotateY(16deg) rotate(5deg);opacity:.8"></div>
+        <div class="poster" style="left:720px;top:420px;width:300px;height:420px;transform:translateZ(-160px) rotateY(-14deg) rotate(2deg);opacity:.9"></div>
+        <div class="poster floaty" style="left:320px;top:250px;width:440px;height:610px;transform:translateZ(80px);box-shadow:0 0 0 2px #B8A0F8,0 0 120px rgba(184,160,248,.45),0 60px 120px rgba(0,0,0,.55)"></div>
+      </div>
+      <!-- card contents are placed in a flat layer so they stay crisp -->
+      <div style="position:absolute;inset:700px 0 260px 0;perspective:1400px;z-index:3;pointer-events:none">
+        <div style="position:absolute;left:110px;top:60px;width:300px;height:420px;transform:translateZ(-620px) rotateY(20deg) rotate(14deg);opacity:.6">
+          <div style="position:absolute;left:24px;top:24px;font:500 18px var(--mono);color:#FF8FB8">v1 · 14°</div>
+          <div style="position:absolute;right:-30px;top:80px;width:240px;height:150px;background:repeating-linear-gradient(180deg,#fff 0 30px,transparent 30px 40px);opacity:.8"></div>
+        </div>
+        <div style="position:absolute;left:660px;top:10px;width:300px;height:420px;transform:translateZ(-460px) rotateY(-18deg) rotate(9deg);opacity:.7">
+          <div style="position:absolute;left:24px;top:24px;font:500 18px var(--mono);color:#FF8FB8">v2 · 9°</div>
+          <div style="position:absolute;right:0;top:90px;width:220px;height:130px;background:repeating-linear-gradient(180deg,#fff 0 26px,transparent 26px 36px);opacity:.8"></div>
+        </div>
+        <div style="position:absolute;left:40px;top:430px;width:300px;height:420px;transform:translateZ(-260px) rotateY(16deg) rotate(5deg);opacity:.85">
+          <div style="position:absolute;left:24px;top:24px;font:500 18px var(--mono);color:#C9B8FF">v3 · 5°</div>
+          <div style="position:absolute;left:30px;top:90px;width:220px;height:100px;background:repeating-linear-gradient(180deg,#fff 0 22px,transparent 22px 32px);opacity:.85"></div>
+          <div style="position:absolute;left:30px;bottom:40px;width:120px;height:30px;border-radius:30px;background:#6B3BEA"></div>
+        </div>
+        <div style="position:absolute;left:720px;top:420px;width:300px;height:420px;transform:translateZ(-160px) rotateY(-14deg) rotate(2deg);opacity:.95">
+          <div style="position:absolute;left:24px;top:24px;font:500 18px var(--mono);color:#C9B8FF">v4 · 2°</div>
+          <div style="position:absolute;left:30px;top:90px;width:200px;height:90px;background:repeating-linear-gradient(180deg,#fff 0 20px,transparent 20px 30px)"></div>
+          <div style="position:absolute;left:30px;top:206px;width:160px;height:10px;border-radius:6px;background:#A99BC9"></div>
+          <div style="position:absolute;left:30px;bottom:40px;width:130px;height:32px;border-radius:30px;background:#6B3BEA"></div>
+        </div>
+        <div class="floaty" style="position:absolute;left:320px;top:250px;width:440px;height:610px;transform:translateZ(80px);border-radius:36px;background:linear-gradient(180deg,#24124F,#120A2E)">
+          <div style="position:absolute;left:44px;top:44px;font:500 18px var(--mono);letter-spacing:.18em;color:#C9B8FF">DESIGN WORKSHOP</div>
+          <div style="position:absolute;left:44px;top:96px;font-size:50px;font-weight:600;line-height:1.2;letter-spacing:-.02em">Build a clear<br><span style="color:#C9B8FF">visual identity.</span></div>
+          <div style="position:absolute;left:44px;top:250px;width:300px;font-size:20px;line-height:1.45;color:#A99BC9">Two hours on type pairing, grids and spacing.</div>
+          <div style="position:absolute;left:44px;bottom:110px;font-size:20px;color:#A99BC9">Saturday · 10:00 AM</div>
+          <div style="position:absolute;left:44px;bottom:40px;padding:12px 24px;border-radius:999px;background:linear-gradient(90deg,#6B3BEA,#B8A0F8);font-size:20px;font-weight:600">Book your seat</div>
+          <div style="position:absolute;right:30px;bottom:46px;font:500 18px var(--mono);color:#fff;background:rgba(184,160,248,.25);padding:6px 10px;border-radius:8px">v5 · 0.0° ✓</div>
+        </div>
+      </div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M260 820 C 420 980 520 1020 540 1180" marker-end="url(#ah)"/><text x="72" y="1700">camera flies v1 → v5, 0.3 s per card</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">09</span><h3>Iterate · fly-through</h3><time>0:32.0 – 0:34.3 · bar 15</time></div>
+      <dl>
+        <dt>Motion</dt><dd>One bar, fast. Three words hit on beats 1, 2 and 3, each in a heavier weight. The camera dollies through floating versions v1 to v5 as their tilt tags count down from 14° to 0.0°. Background orbs are blurred for depth.</dd>
+        <dt>VO</dt><dd class="vo">“Then nudge, step back, and nudge again.”</dd>
+        <dt>On screen</dt><dd class="os">Nudge. / Step back. / Nudge again.</dd>
+        <dt>Out</dt><dd>Fly straight into v5; it fills the frame and becomes the payoff card.</dd>
+        <dt>SFX</dt><dd>Three tight hits on the beat, airy whoosh past each card.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <!-- F10 ─────────────── PAYOFF before/after -->
+  <article class="sb" id="f10">
+    <div class="fw"><div class="f">
+      <div class="h" style="top:300px"><span class="l" style="font-size:84px">Same words.</span><span class="w" style="font-size:118px">Now it sits still.</span></div>
+      <div class="poster ba" style="left:110px;top:640px;width:860px;height:940px;overflow:hidden;--cut:30%">
+        <!-- AFTER -->
+        <div style="inset:0">
+          <div class="img-blend" style="right:-60px;bottom:120px;width:420px;height:400px;background-image:url(assets/swirl.jpg);opacity:.9"></div>
+          <div class="p-eye" style="position:absolute;left:84px;top:96px">Design workshop</div>
+          <div style="position:absolute;left:84px;top:160px;font-size:82px;font-weight:600;line-height:1.12;letter-spacing:-.02em">Build a clear<br><span style="color:#C9B8FF">visual identity.</span></div>
+          <div style="position:absolute;left:84px;top:380px;width:520px;font-size:28px;line-height:1.45;color:#A99BC9">Two hours on type pairing, grids and spacing.</div>
+          <div class="p-meta" style="position:absolute;left:84px;bottom:200px">Saturday · 10:00 AM</div>
+          <div class="p-cta" style="position:absolute;left:84px;bottom:84px">Book your seat</div>
+        </div>
+        <!-- BEFORE (clipped to the left of the scrub handle) -->
+        <div style="inset:0;background:#120A2E;clip-path:inset(0 calc(100% - var(--cut)) 0 0)">
+          <div class="p-eye" style="position:absolute;left:40px;top:40px">Design workshop</div>
+          <div style="position:absolute;left:34px;top:120px;font-size:150px;font-weight:900;line-height:.84;text-transform:uppercase;letter-spacing:-.03em;transform:rotate(8deg);transform-origin:left top;white-space:nowrap">Build<br>a clear<br>visual<br>identity</div>
+          <div class="tilt warn" style="left:30px;bottom:104px;font-size:22px;padding:10px 16px;gap:10px"><span class="dot" style="width:12px;height:12px"></span>14.0°</div>
+        </div>
+        <span class="chip" style="left:28px;top:auto;bottom:28px;font-size:18px;padding:8px 14px;background:rgba(255,143,184,.15);border-color:rgba(255,143,184,.5);color:#FFC2D9">Before</span>
+        <span class="chip" style="right:28px;bottom:28px;font-size:18px;padding:8px 14px">After</span>
+        <div style="left:var(--cut);top:0;bottom:0;width:4px;margin-left:-2px;background:#fff;box-shadow:0 0 24px #B8A0F8"></div>
+        <div style="left:var(--cut);top:50%;width:88px;height:88px;margin:-44px 0 0 -44px;border-radius:50%;background:#fff;color:#120829;display:grid;place-items:center;font:700 30px var(--mono);box-shadow:0 0 0 8px rgba(184,160,248,.35),0 0 40px #B8A0F8">‹ ›</div>
+      </div>
+      <div class="tilt ok center-x" style="top:1606px"><span class="dot"></span>14.0° → 0.0° ✓ Balanced</div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M370 1250 L 720 1250" marker-start="url(#ah)" marker-end="url(#ah)"/><text x="400" y="1226">scrub handle sweeps</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">10</span><h3>Payoff · before / after</h3><time>0:34.3 – 0:38.9 · bars 16–17</time></div>
+      <dl>
+        <dt>Motion</dt><dd>The v5 card lands full size. A scrub handle sweeps right to left, revealing the original mess, then back to the balanced version. The tilt readout counts down 14.0° to 0.0° in sync and locks with a glow.</dd>
+        <dt>VO</dt><dd class="vo">“Same words. Same space. Now it sits still.”</dd>
+        <dt>On screen</dt><dd class="os">Same words. / Now it sits still. · 14.0° → 0.0°</dd>
+        <dt>Out</dt><dd>The card shrinks and drops onto your chrome seesaw, which levels (callback to scene 02).</dd>
+        <dt>SFX</dt><dd>Scrub swish both ways, a clean “ding” at 0.0°.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <!-- F11 ─────────────── TAKEAWAY + SAVE -->
+  <article class="sb" id="f11">
+    <div class="fw"><div class="f">
+      <div class="h" style="top:300px"><span class="l" style="font-size:88px">Type has weight.</span><span class="w" style="font-size:136px">Design with it.</span></div>
+      <div class="img-blend" style="left:20px;top:690px;width:1040px;height:700px;background-image:url(assets/beam.jpg)"></div>
+      <div class="glass center-x" style="top:1400px;display:inline-flex;align-items:center;gap:22px;padding:30px 48px;border-radius:999px;white-space:nowrap;font-size:36px;font-weight:500">
+        <svg width="34" height="44" viewBox="0 0 34 44"><path d="M3 3 H31 V41 L17 31 L3 41 Z" fill="#B8A0F8" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        Save for your next layout
+      </div>
+      <div style="position:absolute;left:760px;top:1446px;width:120px;height:120px;border-radius:50%;border:3px solid rgba(184,160,248,.6);z-index:6" class="glow-pulse"></div>
+      <div style="position:absolute;left:730px;top:1416px;width:180px;height:180px;border-radius:50%;border:2px solid rgba(184,160,248,.3);z-index:6"></div>
+      <div class="cur" style="left:808px;top:1490px"><svg viewBox="0 0 40 48"><path d="M3 3 L3 39 L12.5 30 L19 45 L26 42 L19.5 27.5 L33 27.5 Z" fill="#B8A0F8" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg><span>Younsse</span></div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M540 600 L 540 820" marker-end="url(#ah)"/><text x="570" y="680">poster card drops in, beam levels</text><text x="72" y="1660">click ripple on beat 1 of bar 19</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">11</span><h3>Takeaway · save</h3><time>0:38.9 – 0:43.4 · bars 18–19</time></div>
+      <dl>
+        <dt>Motion</dt><dd>The balanced card shrinks into your chrome seesaw render; the ring and cube rock once and settle level. Two-tone headline sets on the beat. A Save pill rises and the cursor clicks it with a ripple.</dd>
+        <dt>VO</dt><dd class="vo">“Type has weight. Design with it. Save this for your next layout.”</dd>
+        <dt>On screen</dt><dd class="os">Type has weight. / Design with it. · Save for your next layout</dd>
+        <dt>Out</dt><dd>The Save pill expands upward into the profile card.</dd>
+        <dt>SFX</dt><dd>Warm chord resolve, bookmark “pop”.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <!-- F12 ─────────────── LOOP / END CARD -->
+  <article class="sb" id="f12">
+    <div class="fw"><div class="f">
+      <div style="position:absolute;left:0;right:0;top:270px;text-align:center;font-size:134px;font-weight:500;letter-spacing:-.025em;color:rgba(255,255,255,.9);text-shadow:0 -24px 0 rgba(255,255,255,.18),0 -48px 0 rgba(255,255,255,.08);z-index:3">Your</div>
+      <div class="glass" style="left:120px;right:120px;top:520px;height:1060px;display:grid;justify-items:center;align-content:start;padding-top:90px;gap:0;text-align:center">
+        <img src="assets/avatar.jpg" alt="" style="width:260px;height:260px;border-radius:50%;border:5px solid #B8A0F8;box-shadow:0 0 0 14px rgba(184,160,248,.12),0 0 80px rgba(184,160,248,.55);object-fit:cover">
+        <div style="font-size:60px;font-weight:500;margin-top:48px;letter-spacing:-.02em">Younsse Ezarini</div>
+        <div style="font-size:34px;color:#C9B8FF;margin-top:10px">@younsse.ezarini</div>
+        <div style="width:640px;height:2px;background:rgba(184,160,248,.22);margin-top:56px"></div>
+        <div style="font:500 22px var(--mono);letter-spacing:.2em;color:#A99BC9;margin-top:44px">THE FOUR LEVERS</div>
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-top:28px;max-width:700px">
+          <span class="chip" style="font-size:24px">Size</span><span class="chip" style="font-size:24px">Weight</span><span class="chip" style="font-size:24px">Color</span><span class="chip" style="font-size:24px">Space</span>
+        </div>
+        <div class="p-cta" style="position:static;margin-top:64px;font-size:34px;padding:26px 60px">Follow for more</div>
+      </div>
+      <svg class="mg" viewBox="0 0 1080 1920"><path d="M920 280 L 920 470" marker-end="url(#ah)"/><text x="610" y="250">“Your” drops → hard cut to 01</text></svg>
+    </div></div>
+    <div class="ann">
+      <div class="ann-h"><span class="no">12</span><h3>End card · loop</h3><time>0:43.4 – 0:45.7 · bar 20</time></div>
+      <dl>
+        <dt>Motion</dt><dd>Profile card in your carousel style, with the four levers as a recap. On the last beat the word “Your” falls in from the top with a motion trail and lands where it starts in frame 01, so the reel loops seamlessly.</dd>
+        <dt>VO</dt><dd class="vo">“Follow for more.”</dd>
+        <dt>On screen</dt><dd class="os">Younsse Ezarini · @younsse.ezarini · Size · Weight · Color · Space</dd>
+        <dt>Out</dt><dd>Hard cut on the downbeat into frame 01 (loop point).</dd>
+        <dt>SFX</dt><dd>Music tail clipped so the loop restarts on bar 1.</dd>
+      </dl>
+    </div>
+  </article>
+
+  </div>
+</section>
+
+<section id="motion">
+  <div class="sec-h">
+    <span class="eyebrow">05 · Motion system</span>
+    <h2>Transitions that carry an object across every cut.</h2>
+    <p>No cross-dissolves. Each scene hands a shape, a word or a UI element to the next one.</p>
+  </div>
+  <ol class="trans">
+    <li><b>T1 · 01 → 02</b><span>Match on action</span><p>Backspace removes “ugly” and the poster's tilt accelerates on the same frame.</p></li>
+    <li><b>T2 · 02 → 03</b><span>Gravity drop</span><p>“BUILD” falls out of the poster; the camera tilts with it and it lands on the beam.</p></li>
+    <li><b>T3 · 03 → 04</b><span>UI match cut</span><p>Push in on the heavy word; a selection box snaps around it.</p></li>
+    <li><b>T4 · 04 → 05</b><span>Shape match</span><p>The resize drag line stretches sideways into the weight slider track.</p></li>
+    <li><b>T5 · 05 → 06</b><span>Text-to-texture</span><p>The thin strokes of “Light” unravel into lines of paragraph copy.</p></li>
+    <li><b>T6 · 06 → 07</b><span>Glow to redline</span><p>The glow behind “Saturday” stretches into a vertical spacing redline.</p></li>
+    <li><b>T7 · 07 → 08</b><span>Lines to axis</span><p>All redlines merge into one center axis that splits the frame.</p></li>
+    <li><b>T8 · 08 → 09</b><span>Z-space pull-back</span><p>The frame shrinks into one floating card among the iterations.</p></li>
+    <li><b>T9 · 09 → 10</b><span>Fly-in</span><p>The camera flies into v5 until it fills the frame; the scrub handle enters.</p></li>
+    <li><b>T10 · 10 → 11</b><span>Callback drop</span><p>The finished card shrinks onto your chrome seesaw, which levels.</p></li>
+    <li><b>T11 · 12 → 01</b><span>Loop</span><p>“Your” falls into place and the reel restarts without a visible seam.</p></li>
+  </ol>
+
+  <div class="grid2" style="margin-top:28px">
+    <div class="card">
+      <h3>Motion tokens</h3>
+      <dl class="kv">
+        <dt>UI snap</dt><dd><b>cubic-bezier(.22, 1, .36, 1)</b> · 320–450 ms for selection boxes, chips and panels</dd>
+        <dt>Physical</dt><dd><b>Spring</b> stiffness 220, damping 14, one overshoot, for drops and the beam</dd>
+        <dt>Beam settle</dt><dd>Damped swing: 3 oscillations, each 40% of the last, over 0.9 s</dd>
+        <dt>Type in</dt><dd>Baseline mask reveal, 30 ms stagger per letter, 60 ms per word</dd>
+        <dt>Weight morph</dt><dd>Inter Tight wght axis 900 → 200 over 1.2 s ease-in-out</dd>
+        <dt>Camera</dt><dd>Constant 2% push per scene, motion blur on moves above 40 px/frame</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h3>Delivery</h3>
+      <dl class="kv">
+        <dt>Format</dt><dd><b>1080 × 1920</b>, 60 fps for UI smoothness (30 fps fallback), H.264, Rec.709</dd>
+        <dt>Safe zones</dt><dd>Key text clears the top 220 px, bottom 420 px and right 140 px. Toggle “Reels safe zones” above to check.</dd>
+        <dt>Fonts</dt><dd>Inter Tight (variable), Geist Mono. Both free on Google Fonts.</dd>
+        <dt>Assets</dt><dd>Avatar and chrome renders cropped from your “Design Balance” carousel. Re-render the seesaw without the ring and cube if you want words to sit on the real 3D beam.</dd>
+        <dt>Music</dt><dd>Minimal electronic at 105 BPM, 20 bars, with a clean downbeat on bar 1 for the loop.</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<footer class="end">Type Has Weight · storyboard v1 · @younsse.ezarini</footer>
+</div>
+
+<script>
+(function(){
+  var foot='<div class="ft"><span class="x">×</span>Typography Balance<span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="#F5F2FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span></div>'+
+    '<div class="sz" aria-hidden="true"><i style="left:0;right:0;top:0;height:220px"></i><b style="left:24px;top:232px">Reels UI · top 220</b><i style="left:0;right:0;bottom:0;height:420px"></i><b style="left:24px;bottom:432px">caption + CTA · bottom 420</b><i style="right:0;top:220px;bottom:420px;width:140px"></i></div>';
+  var frames=document.querySelectorAll('.f');
+  frames.forEach(function(f,i){
+    var n=String(i+1).padStart(2,'0');
+    f.insertAdjacentHTML('afterbegin','<div class="bgx"></div><div class="floor"></div><div class="hd"><img class="av" src="assets/avatar.jpg" alt=""><div class="who"><b>Younsse Ezarini</b><span>@younsse.ezarini</span></div><div class="ct"><b>'+n+'</b>/'+frames.length+'<i></i></div></div>');
+    f.insertAdjacentHTML('beforeend',foot);
+  });
+  var fit=function(w){w.style.setProperty('--k',(w.clientWidth/1080).toFixed(5));};
+  var wraps=document.querySelectorAll('.fw');
+  if('ResizeObserver' in window){var ro=new ResizeObserver(function(es){es.forEach(function(e){fit(e.target);});});wraps.forEach(function(w){ro.observe(w);});}
+  wraps.forEach(fit);
+  var root=document.documentElement;
+  root.classList.add('show-guides','animate');
+  function bind(id,cls){var b=document.getElementById(id);b.addEventListener('click',function(){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));root.classList.toggle(cls,on);});}
+  bind('t-guides','show-guides');bind('t-safe','show-safe');bind('t-anim','animate');
+})();
+</script>
