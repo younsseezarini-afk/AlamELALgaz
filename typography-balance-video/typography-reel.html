@@ -55,6 +55,7 @@ body{overflow:hidden}
 .center{position:absolute;left:0;right:0;text-align:center}
 .chip{display:inline-flex;align-items:center;gap:14px;padding:14px 26px;border-radius:999px;border:2px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);font:500 24px/1 var(--mono);letter-spacing:.1em;color:#fff;text-transform:uppercase;white-space:nowrap}
 .chip i{width:12px;height:12px;border-radius:50%;background:#F2B6E8;box-shadow:0 0 14px #F2B6E8}
+.chip.solid{background:rgba(30,11,31,.5);border-color:rgba(255,255,255,.6);font-weight:600;box-shadow:0 10px 30px rgba(30,11,31,.25)}
 .chip.inkc{border-color:rgba(30,11,31,.22);background:rgba(255,255,255,.7);color:#1E0B1F}
 .chip.inkc i{background:#A05A96;box-shadow:none}
 .glass{border-radius:36px;background:linear-gradient(180deg,rgba(60,24,60,.62),rgba(18,10,18,.82));border:2px solid rgba(220,160,220,.28);box-shadow:inset 0 2px 0 rgba(255,255,255,.08),0 40px 90px rgba(0,0,0,.45)}
@@ -69,6 +70,9 @@ body{overflow:hidden}
 .page{position:absolute;left:0;top:0;width:420px;height:525px;border-radius:28px;background-size:cover;background-position:center;box-shadow:0 40px 80px rgba(30,11,31,.4),0 0 0 2px rgba(255,255,255,.12)}
 .tile{position:absolute;width:130px;height:130px;border-radius:30px;background:linear-gradient(135deg,#5C2A5A,#241225);box-shadow:inset 0 3px 0 rgba(255,255,255,.18),0 30px 50px rgba(0,0,0,.5),0 0 40px rgba(220,160,220,.25);border:2px solid rgba(220,160,220,.35)}
 .row{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.track{height:10px;border-radius:10px;background:rgba(220,160,220,.2);position:relative}
+.track .tf{position:absolute;left:0;top:0;bottom:0;border-radius:10px;background:linear-gradient(90deg,#B46EAA,#F2B6E8)}
+.track .knob{position:absolute;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:#fff;box-shadow:0 0 0 7px rgba(242,182,232,.3),0 0 24px rgba(242,182,232,.6)}
 .btn{display:inline-flex;align-items:center;gap:16px;padding:28px 46px;border-radius:999px;font-size:40px;font-weight:600;white-space:nowrap}
 </style>
 
@@ -94,9 +98,7 @@ body{overflow:hidden}
   <div class="sc" id="s3">
     <div class="hl" id="s3h" style="top:300px;font-size:66px;font-weight:500"><span class="bw">Choose</span> <span class="bw">type</span> <span class="bw">that</span> <span class="bw">gives</span><br><span class="bw">every</span> <span class="bw">message</span></div>
     <div class="fill" style="perspective:1600px;perspective-origin:50% 55%">
-      <div class="tile" id="t1" style="left:150px;top:850px"></div><div class="tile" id="t2" style="left:800px;top:850px"></div>
-      <div class="tile" id="t3" style="left:170px;top:1330px"></div><div class="tile" id="t4" style="left:780px;top:1330px"></div>
-      <canvas id="s3aa" class="abs" data-o="aa" width="520" height="520" style="left:280px;top:760px;width:520px;height:520px"></canvas>
+      <canvas id="s3aa" class="abs" data-o="aaHero" width="800" height="800" style="left:140px;top:640px;width:800px;height:800px"></canvas>
     </div>
     <div class="hl" style="top:1450px;font-size:130px;font-weight:700"><span class="bw grad" id="k1">clarity.</span></div>
     <div class="hl" style="top:1450px;font-size:130px;font-weight:700"><span class="bw grad" id="k2">character.</span></div>
@@ -105,14 +107,14 @@ body{overflow:hidden}
 
   <!-- S4 hierarchy -->
   <div class="sc" id="s4">
-    <div class="center" style="top:290px"><span class="chip" id="s4c"><i></i>Rule 01 · Hierarchy</span></div>
+    <div class="center" style="top:250px"><span class="chip solid" id="s4c"><i></i>Rule 01 · Hierarchy</span></div>
     <div class="hl" id="s4a" style="top:390px;font-size:70px;font-weight:400"><span class="bw">Clear</span></div>
     <div class="center" style="top:470px"><span id="s4w" style="position:relative;display:inline-block;font-size:176px;font-weight:800;letter-spacing:-.045em;line-height:.9">Hierarchy.
       <span class="sel" id="s4sel" style="left:-20px;right:-20px;top:-10px;bottom:-14px"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></span>
-      <span id="s4badge" class="abs" style="right:-70px;top:-150px;width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.5);box-shadow:0 20px 50px rgba(30,11,31,.3)"><canvas id="s4coin" data-o="bigA" width="190" height="190" style="position:absolute;left:0;top:0;width:190px;height:190px"></canvas></span>
+      <span id="s4badge" class="abs" style="right:-70px;top:-150px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(42,14,44,.75),rgba(42,14,44,.45));border:3px solid rgba(255,255,255,.55);box-shadow:0 20px 50px rgba(30,11,31,.3)"><canvas id="s4coin" data-o="bigA" width="190" height="190" style="position:absolute;left:0;top:0;width:190px;height:190px"></canvas></span>
     </span></div>
     <div class="hl" id="s4b" style="top:690px;font-size:108px;font-weight:600"><span class="bw gradW">Better</span> <span class="bw gradW">Flow.</span></div>
-    <div class="abs glass" id="s4card" style="left:110px;right:110px;top:880px;height:440px;padding:48px 52px;display:grid;align-content:start;gap:18px">
+    <div class="abs glass" id="s4card" style="left:110px;right:110px;top:880px;padding:46px 52px 50px;display:grid;align-content:start;gap:18px">
       <div class="row"><span class="hx" id="h1">Headline</span><span class="pill" id="z1">44</span></div>
       <div class="row"><span class="hx" id="h2">Subhead</span><span class="pill" id="z2">44</span></div>
       <div class="row"><span class="hx" id="h3">Body text that supports it.</span><span class="pill" id="z3">44</span></div>
@@ -123,7 +125,7 @@ body{overflow:hidden}
 
   <!-- S5 typeface -->
   <div class="sc" id="s5">
-    <div class="center" style="top:290px"><span class="chip inkc" id="s5c"><i></i>Rule 02 · Typeface</span></div>
+    <div class="center" style="top:250px"><span class="chip inkc" id="s5c"><i></i>Rule 02 · Typeface</span></div>
     <div class="center ink" id="s5type" style="top:390px;font-size:84px;font-weight:600;letter-spacing:-.02em"><span id="s5tt"></span><span id="s5car" style="display:inline-block;width:6px;height:86px;background:#A05A96;vertical-align:-12px;margin-left:6px"></span></div>
     <div class="hl" id="s5a" style="top:540px;font-size:64px;font-weight:400;color:#8E3C8C"><span class="bw">Build</span> <span class="bw">One</span></div>
     <div class="center" style="top:620px;height:200px"><span class="bw ink" id="s5id" style="font-size:170px;line-height:1.1;white-space:nowrap">Identity</span></div>
@@ -137,18 +139,21 @@ body{overflow:hidden}
 
   <!-- S6 spacing -->
   <div class="sc" id="s6">
-    <div class="center" style="top:290px"><span class="chip" id="s6c"><i></i>Rule 03 · Spacing</span></div>
+    <div class="center" style="top:250px"><span class="chip solid" id="s6c"><i></i>Rule 03 · Spacing</span></div>
     <div class="center" id="s6big" style="top:620px;font-size:230px;font-weight:800;line-height:1;white-space:nowrap;opacity:0">SPACE</div>
     <div class="hl" id="s6a" style="top:380px;font-size:110px;font-weight:600"><span class="bw">Space</span> <span class="bw">Matters.</span></div>
     <div class="hl" id="s6b" style="top:510px;font-size:96px;font-weight:600"><span class="bw grad">Let</span> <span class="bw grad">Words</span> <span class="bw grad">Breathe</span></div>
-    <div class="abs glass" id="s6card" style="left:110px;right:110px;top:690px;height:600px;padding:52px 56px">
-      <div id="s6t" style="font-size:52px;font-weight:500;color:#fff">Adjust line height and letter spacing to keep text readable.</div>
-      <div class="abs" style="left:56px;right:56px;bottom:46px;display:grid;gap:14px;font:500 24px/1.2 var(--mono);color:#DCB8DA">
-        <div class="row"><span>Line height</span><b id="s6v1" style="color:#fff;font-weight:500">92%</b></div>
-        <div class="row"><span>Letter spacing</span><b id="s6v2" style="color:#fff;font-weight:500">−5%</b></div>
+    <div class="abs glass" id="s6card" style="left:110px;right:110px;top:680px;padding:48px 56px 44px">
+      <div style="position:relative">
+        <div id="s6t" style="font-size:54px;font-weight:500;color:#fff;padding-right:70px">Adjust line height and letter spacing to keep text readable.</div>
+        <div id="s6guides" class="abs" style="inset:0;pointer-events:none"></div>
+      </div>
+      <div style="margin-top:42px;display:grid;gap:26px;font:500 23px/1 var(--mono);color:#DCB8DA;letter-spacing:.06em">
+        <div style="display:grid;gap:14px"><div class="row"><span>LINE HEIGHT</span><b id="s6v1" style="color:#fff;font-weight:500">92%</b></div><div class="track"><div class="tf" id="s6f1"></div><div class="knob" id="s6k1"></div></div></div>
+        <div style="display:grid;gap:14px"><div class="row"><span>LETTER SPACING</span><b id="s6v2" style="color:#fff;font-weight:500">−5%</b></div><div class="track"><div class="tf" id="s6f2"></div><div class="knob" id="s6k2"></div></div></div>
       </div>
     </div>
-    <canvas id="s6keys" class="abs" data-o="keys" width="480" height="420" style="left:560px;top:1170px;width:480px;height:420px"></canvas>
+    <canvas id="s6keys" class="abs" data-o="keys" width="460" height="400" style="left:310px;top:1300px;width:460px;height:400px"></canvas>
   </div>
 
   <!-- S7 page fan -->
@@ -167,8 +172,9 @@ body{overflow:hidden}
     <div class="hl" id="s8b" style="top:425px;font-size:104px;font-weight:600"><span class="bw grad">Stay</span> <span class="bw grad">Inspired.</span></div>
     <div class="hl blush" id="s8p" style="top:570px;font-size:42px;font-weight:500;line-height:1.3;letter-spacing:-.01em"><span class="bw">Fresh</span> <span class="bw">ideas</span> <span class="bw">and</span> <span class="bw">inspiration</span><br><span class="bw">to</span> <span class="bw">keep</span> <span class="bw">you</span> <span class="bw">creating.</span></div>
     <div class="abs" id="ring" style="left:90px;top:860px;width:900px;height:330px;border-radius:50%;border:4px solid rgba(242,182,232,.75);box-shadow:0 0 40px rgba(242,182,232,.55),inset 0 0 30px rgba(242,182,232,.35);transform:rotate(-14deg)"></div>
-    <canvas id="s8heart" class="abs" data-o="heart" width="400" height="400" style="left:80px;top:760px;width:400px;height:400px"></canvas>
-    <canvas id="s8plus" class="abs" data-o="plus" width="380" height="380" style="left:610px;top:700px;width:380px;height:380px"></canvas>
+    <div class="abs" id="s8av" style="left:430px;top:870px;width:220px;height:220px;border-radius:50%;padding:8px;background:linear-gradient(135deg,#F2B6E8,#B46EAA);box-shadow:0 0 0 10px rgba(242,182,232,.15),0 0 70px rgba(242,182,232,.6)"><img src="assets/avatar.jpg" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block"></div>
+    <canvas id="s8heart" class="abs" data-o="heart" width="360" height="360" style="left:60px;top:790px;width:360px;height:360px"></canvas>
+    <canvas id="s8plus" class="abs" data-o="plus" width="340" height="340" style="left:680px;top:740px;width:340px;height:340px"></canvas>
     <div class="center" id="s8btns" style="top:1380px;display:flex;justify-content:center;gap:24px">
       <span class="btn glass" id="likeB" style="border-radius:999px"><svg width="40" height="36" viewBox="0 0 40 36"><path id="likeH" d="M20 34 C 6 24 2 17 2 11 A 9 9 0 0 1 20 7 A 9 9 0 0 1 38 11 C 38 17 34 24 20 34 Z" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg><span id="likeT">Like</span></span>
       <span class="btn" id="folB" style="background:linear-gradient(90deg,#B46EAA,#F2B6E8);color:#1E0B1F;box-shadow:0 20px 50px rgba(180,110,170,.45)"><span id="folT">+ Follow</span></span>
@@ -297,9 +303,7 @@ function render(t){
   // S3
   if(t>=WIN.s3[0]&&t<WIN.s3[1]){
     const wp=E.inCubic(P(t,8.85,9.14));T($('s3'),-1300*wp,0,1,0,1);
-    const k=E.outBack(P(t,4.72,5.3));T($('s3aa'),0,10*Math.sin(t*2),L(0.5,1,k),0,P(t,4.7,4.85));o3.s3aa={ry:L(-2.8,-0.2,k)+0.18*Math.sin(t*0.9)};
-    [['t1',-1,-1],['t2',1,-1],['t3',-1,1],['t4',1,1]].forEach(([id,sx,sy],i)=>{const q=E.outBack(P(t,5.0+i*0.08,5.55+i*0.08));
-      $(id).style.transform=`translate(${f2(sx*400*(1-q))}px,${f2(sy*400*(1-q)+8*Math.sin(t*2.2+i))}px) rotateX(55deg) rotateZ(45deg) scale(${L(0.3,1,q).toFixed(3)})`;O($(id),P(t,5.0+i*0.08,5.1+i*0.08));});
+    const k=E.outBack(P(t,4.72,5.3));T($('s3aa'),0,10*Math.sin(t*2),L(0.5,1,k),0,P(t,4.7,4.85));o3.s3aa={ry:L(-2.8,-0.2,k)+0.18*Math.sin(t*0.9),t:(t-4.7)*1.0+L(-3,0,k)};
     BW($('s3h'),t,[5.75,5.83,5.91,5.99,6.25,6.33],8.6);
     BW($('k1'),t,6.86,7.3);BW($('k2'),t,7.43,7.87);BW($('k3'),t,8.0,8.75);
   }
@@ -309,7 +313,7 @@ function render(t){
     pop($('s4c'),t,9.2,undefined,0.6);BW($('s4a'),t,9.3);
     T($('s4w'),L(1300,0,E.outExpo(P(t,9.15,9.6))),0,1,0,1);
     T($('s4sel'),0,0,L(1.08,1,E.outCubic(P(t,9.6,9.75))),0,t>=9.6?1:0);
-    const bk=E.outBack(P(t,9.85,10.2));o3.s4coin={rx:-0.3,ry:-0.45+0.35*Math.sin(t*1.3)+L(-6.28,0,bk)};$('s4badge').style.transform=`scale(${L(0,1,bk).toFixed(4)}) rotate(${f2(L(-40,0,bk)+5*Math.sin(t*3))}deg) translateY(${f2(6*Math.sin(t*2.4))}px)`;
+    const bk=E.outBack(P(t,9.85,10.2));o3.s4coin={rx:-0.55,ry:-0.45+0.35*Math.sin(t*1.3)+L(-6.28,0,bk)};$('s4badge').style.transform=`scale(${L(0,1,bk).toFixed(4)}) rotate(${f2(L(-40,0,bk)+5*Math.sin(t*3))}deg) translateY(${f2(6*Math.sin(t*2.4))}px)`;
     BW($('s4b'),t,[10.3,10.4]);
     const ck=E.outExpo(P(t,10.5,10.95));T($('s4card'),0,60*(1-ck),L(.9,1,ck),0,P(t,10.5,10.6),16*(1-ck));
     const hk=E.outCubic(P(t,11.0,11.8));
@@ -348,6 +352,11 @@ function render(t){
     const ck=E.outExpo(P(t,19.75,20.2));T($('s6card'),0,60*(1-ck),L(.9,1,ck),0,P(t,19.75,19.85),16*(1-ck));
     const gk=E.inOutCubic(P(t,20.3,21.4)),lh=L(0.92,1.45,gk),ls=L(-0.05,0.01,gk);
     $('s6t').style.lineHeight=lh.toFixed(3);$('s6t').style.letterSpacing=ls.toFixed(4)+'em';
+    const lp=(lh-0.9)/0.6*100,sp=(ls+0.06)/0.1*100;$('s6f1').style.width=f2(lp)+'%';$('s6k1').style.left=f2(lp)+'%';$('s6f2').style.width=f2(sp)+'%';$('s6k2').style.left=f2(sp)+'%';
+    const tEl=$('s6t'),lhPx=54*lh,nl=Math.max(1,Math.round(tEl.offsetHeight/lhPx));let gd='';
+    for(let i=1;i<nl;i++) gd+=`<div class="abs" style="left:0;right:70px;top:${f2(i*lhPx)}px;border-top:2px dashed rgba(255,143,184,.55)"></div>`;
+    gd+=`<div class="abs" style="right:26px;top:4px;width:22px;height:${f2(lhPx-8)}px;border:3px solid #FF8FB8;border-left:0"></div>`;
+    $('s6guides').innerHTML=gd;O($('s6guides'),P(t,20.1,20.3));
     $('s6v1').textContent=Math.round(lh*100)+'%';$('s6v2').textContent=(ls<0?'−':'')+Math.abs(Math.round(ls*100))+'%';
     const kk=E.outBack(P(t,20.0,20.4));T($('s6keys'),0,12*Math.sin(t*2.1),L(.3,1,kk),0,P(t,20.0,20.1));o3.s6keys={rx:0.05*Math.sin(t*0.9),ry:0.15*Math.sin(t*1.1)+L(1.2,0,kk)};
   }
@@ -364,7 +373,7 @@ function render(t){
     const ex=E.inCubic(P(t,29.45,29.71));T($('s8'),0,0,L(1,1.12,ex),0,1-ex,22*ex);
     BW($('s8a'),t,[25.35,25.45,25.55]);BW($('s8b'),t,[25.75,25.85]);BW($('s8p'),t,26.1,undefined,0.05);
     $('ring').style.transform=`rotate(-14deg) scale(${E.outCubic(P(t,25.2,25.7)).toFixed(3)})`;O($('ring'),P(t,25.2,25.4));
-    const hk=E.outBack(P(t,25.3,25.7)),pk=E.outBack(P(t,25.45,25.85));
+    const hk=E.outBack(P(t,25.3,25.7)),pk=E.outBack(P(t,25.45,25.85));T($('s8av'),0,8*Math.sin(t*1.8),L(.2,1,E.outBack(P(t,25.2,25.6))),0,P(t,25.2,25.3));
     T($('s8heart'),L(-300,0,hk)+14*Math.cos(t*1.6),14*Math.sin(t*2.2),L(.2,1,hk),0,P(t,25.3,25.4));o3.s8heart={rx:-0.25,rz:-0.1,ry:0.55+0.3*Math.sin(t*1.4)+L(-6.28,0,hk)};
     T($('s8plus'),L(300,0,pk)+14*Math.sin(t*1.5),14*Math.cos(t*2.0),L(.2,1,pk),0,P(t,25.45,25.55));o3.s8plus={rx:-0.2,rz:0.1,ry:-0.55+0.3*Math.cos(t*1.3)+L(6.28,0,pk)};
     const bk=E.outBack(P(t,26.6,27.0));T($('s8btns'),0,40*(1-bk),L(.8,1,bk),0,P(t,26.6,26.75));

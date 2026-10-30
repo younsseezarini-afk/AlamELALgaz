@@ -74,6 +74,18 @@ function flatSymbol(shape, depth = 0.05) {
   return new THREE.Mesh(g, glyph);
 }
 
+function canvasTexture(draw) {
+  const c = document.createElement('canvas'); c.width = c.height = 128; draw(c.getContext('2d')); return new THREE.CanvasTexture(c);
+}
+// soft additive glow lying on the floor
+function glowDisc(size) {
+  const map = canvasTexture((g) => { const r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    r.addColorStop(0, 'rgba(255,230,250,0.95)'); r.addColorStop(0.3, 'rgba(220,150,215,0.55)'); r.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({ map, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2; return m;
+}
+const dotMap = canvasTexture((g) => { g.beginPath(); g.arc(64, 64, 56, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); });
+
 function coin(face) {
   const s = stage([0, 0, 4.6]);
   const body = new THREE.Mesh(coinGeometry(), chrome); s.pivot.add(body);
@@ -88,6 +100,20 @@ function aaKey() {
   const base = new THREE.Mesh(new RoundedBoxGeometry(2.4, 0.5, 1.6, 6, 0.2), dark); base.position.y = -0.1; s.pivot.add(base);
   const rim = new THREE.Mesh(new RoundedBoxGeometry(2.44, 0.035, 1.64, 4, 0.017), rimGlow); rim.position.y = -0.12; s.pivot.add(rim);
   const aa = text('Aa', 1.25, 0.42, chrome, 0.035); aa.position.set(0, 0.78, 0.05); s.pivot.add(aa);
+  return s;
+}
+
+function aaHero() {
+  const s = stage([4.3, 2.6, 6.6], [0, 0.55, 0], 34);
+  const base = new THREE.Mesh(new RoundedBoxGeometry(2.5, 0.55, 1.7, 6, 0.22), dark); base.position.y = -0.12; s.pivot.add(base);
+  const floor = glowDisc(5.6); floor.position.y = -0.41; s.pivot.add(floor);
+  const aa = text('Aa', 1.4, 0.46, chrome, 0.04); aa.position.set(0, 0.88, 0.05); s.pivot.add(aa);
+  s.caps = ['B', 'I', 'Tt', 'Ag'].map((g) => {
+    const grp = new THREE.Group();
+    grp.add(new THREE.Mesh(new RoundedBoxGeometry(0.8, 0.32, 0.8, 5, 0.13), chrome));
+    const t = text(g, 0.34, 0.03, dark); t.rotation.x = -Math.PI / 2; t.position.y = 0.175; grp.add(t);
+    s.scene.add(grp); return grp;
+  });
   return s;
 }
 
@@ -115,21 +141,24 @@ function shield() {
   const cut = new THREE.Mesh(new THREE.CircleGeometry(1, 96), new THREE.MeshPhysicalMaterial({ color: 0x4a2050, metalness: 0.3, roughness: 0.25, side: THREE.DoubleSide, envMapIntensity: 1.2 }));
   cut.rotation.y = Math.PI / 2; cut.scale.set(0.42, 1.25, 1); s.pivot.add(cut);
   const edge = new THREE.Mesh(new THREE.TorusGeometry(1, 0.012, 8, 120, Math.PI), rimGlow); edge.rotation.z = Math.PI / 2; edge.scale.set(1.25, 0.9, 1); s.pivot.add(edge);
-  const aa = text('Aa', 0.42, 0.02, glyph); aa.position.set(-0.46, 0, 0.47); s.pivot.add(aa);
-  const n = 6000, pos = new Float32Array(n * 3), seed = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const u = rand() * 2 - 1, th = rand() * Math.PI - Math.PI / 2; // right half (x >= 0)
-    const r = Math.sqrt(1 - u * u), x = Math.abs(r * Math.cos(th)), z = r * Math.sin(th);
-    const spread = 1 + x * x * 0.55 * rand();
-    pos.set([x * 0.9 * spread, u * 1.25, z * 0.42 * spread], i * 3); seed[i] = rand() * 6.28;
+  const aa = text('Aa', 0.34, 0.02, glyph); aa.position.set(-0.43, 0, 0.45); s.pivot.add(aa);
+  const P = [], C = [], seeds = [], N = 2200, light = new THREE.Color(0xe7b3e2), deep = new THREE.Color(0x8e3c8c);
+  for (let i = 0; i < N; i++) {
+    const y = 1 - ((i + 0.5) / N) * 2, r = Math.sqrt(1 - y * y), phi = i * 2.399963;
+    const x = Math.cos(phi) * r, z = Math.sin(phi) * r;
+    if (x < 0.03) continue;
+    const drift = 1 + Math.pow(Math.max(0, x - 0.45), 2) * 1.6 * rand();
+    P.push(x * 0.9 * drift, y * 1.25, z * 0.42 * drift);
+    const c = deep.clone().lerp(light, Math.min(1, x * 0.9 + rand() * 0.25)); C.push(c.r, c.g, c.b); seeds.push(rand() * 6.28);
   }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const pts = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xc77dc0, size: 0.03, transparent: true, opacity: 0.95, depthWrite: false }));
+  const pos = new Float32Array(P), seed = new Float32Array(seeds);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(C), 3));
+  const pts = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.045, map: dotMap, alphaTest: 0.5, vertexColors: true }));
   s.pivot.add(pts); s.points = { g, base: pos.slice(), seed };
   return s;
 }
 
-const OBJ = { aa: aaKey(), bigA: coin('A'), smalla: coin('a'), heart: coin('heart'), plus: coin('plus'), keys: keys(), shield: shield() };
+const OBJ = { aa: aaKey(), aaHero: aaHero(), bigA: coin('A'), smalla: coin('a'), heart: coin('heart'), plus: coin('plus'), keys: keys(), shield: shield() };
 
 function draw(name, canvas, p = {}) {
   const o = OBJ[name]; if (!o) return;
@@ -145,6 +174,12 @@ function draw(name, canvas, p = {}) {
     }
     g.attributes.position.needsUpdate = true;
   }
+  if (o.caps) o.caps.forEach((c, i) => {
+    const a = (p.t || 0) * 0.55 + i * Math.PI / 2, r = 2.2;
+    c.position.set(Math.cos(a) * r, 0.75 + 0.22 * Math.sin((p.t || 0) * 1.4 + i), Math.sin(a) * r * 0.75);
+    c.scale.setScalar(0.85);
+    c.lookAt(o.camera.position); c.rotateX(Math.PI / 2 - 0.35); c.rotateZ(0.25 * Math.sin((p.t || 0) * 1.1 + i)); // glyph faces the viewer
+  });
   renderer.render(o.scene, o.camera);
   const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, w, h); ctx.drawImage(renderer.domElement, 0, 0, w, h);
 }
