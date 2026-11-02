@@ -14,10 +14,10 @@ def A(key):
 
 # ---------------- narration lines ----------------
 LINES = {}
-for f in sorted(glob.glob('vo/lines/*.mp3.json')):
+for f in sorted(glob.glob('vo/lines2/*.mp3.json')):
     lid = os.path.basename(f)[:-9]
     d = json.load(open(f)); w = d['words']
-    t0 = max(0.0, w[0]['t'] - 0.06); t1 = w[-1]['t'] + w[-1]['d'] + 0.14
+    t0 = max(0.0, w[0]['t'] - 0.04); t1 = w[-1]['t'] + w[-1]['d'] + 0.10
     LINES[lid] = dict(text=d['text'], words=w, src=f[:-5], trim0=t0, dur=t1 - t0)
 
 class Line:
@@ -33,30 +33,30 @@ class Line:
 
 # ---------------- schedule ----------------
 segs = json.load(open('segments.json'))
-GAP = 0.5
+GAP = 0.22
 EXTRA = {'s0_hook_02': .4, 's0_hook_06': .3, 's0_hook_07': .5, 's1_basra_08': .3, 's2_nile_06': .4, 's2_nile_10': .5,
          's2_nile_12': .3, 's3_madness_04': 1.0, 's3_madness_09': .4, 's3_madness_10': .8, 's3_madness_14': .8,
          's4_optics_00': .5, 's5_method_07': .5, 's5_method_08': .3, 's6_europe_03': .5, 's7_ending_04': .8, 's7_ending_07': .8}
-t = 1.4
+t = 0.25
 SCHED, CARDS = [], []
 NUMS = {'s1_basra': '01', 's2_nile': '02', 's3_madness': '03', 's4_optics': '04', 's5_method': '05', 's6_europe': '06', 's7_ending': '07'}
 for sg in segs:
     sid = sg['id']
     if sid == 's1_basra':
-        CARDS.append(('title', t, t + 8.6)); t += 8.2
+        CARDS.append(('title', t, t + 4.9)); t += 4.6
     if sg['chapter']:
-        CARDS.append(('chapter', t, t + 4.6, NUMS[sid], sg['chapter'][0], sg['chapter'][1])); t += 4.2
+        CARDS.append(('chapter', t, t + 3.3, NUMS[sid], sg['chapter'][0], sg['chapter'][1])); t += 3.0
     ids = sorted(k for k in LINES if k.startswith(sid + '_'))
     for lid in ids:
         if sid == 's8_cta': t += 0.6
-        SCHED.append(Line(lid, t)); t += LINES[lid]['dur'] + GAP + EXTRA.get(lid, 0)
-    t += 0.5
+        SCHED.append(Line(lid, t)); t += LINES[lid]['dur'] + GAP + EXTRA.get(lid, 0) * .55
+    t += 0.2
 END_CARD_S = SCHED[-1].s - 0.4
 DURATION = SCHED[-1].e + 5.0
 LN = {l.id: l for l in SCHED}
 
 # ---------------- clip builders ----------------
-BG, OV = [], []   # bg: (start, spec) ; ov: full clips
+BG, OV, FLASH = [], [], []   # bg: (start, spec) ; ov: full clips
 def bg(at, typ, p, **kw): BG.append((at, dict(type=typ, p=p, **kw)))
 def ov(s, e, typ, p, z=500, **kw): OV.append(dict(s=s, e=e, type=typ, p=p, z=z, **kw))
 
@@ -71,7 +71,7 @@ def P(at, key, kb='in', cap=None, pos=None, size=None, rot=0):
     p = dict(src=f'img/{k}.jpg', kb=kbd)
     if mode == 'doc':
         w, h = DIM[k]; asp = w / h
-        dh = min(size or 860, 1640 / asp)
+        dh = min(min(1000, (size or 860) * 1.12), 1740 / asp)
         p.update(doc=1, dh=round(dh), rot=rot)
         if isinstance(kb, str): p['kb'] = {'in': dict(s0=.98, s1=1.04), 'out': dict(s0=1.05, s1=.99)}.get(kb, dict(s0=1.0, s1=1.04))
     if cap: p['cap'] = cap
@@ -90,20 +90,18 @@ def LOWER(s, e, n, t_): ov(s, e, 'lower', dict(n=n, t=t_))
 def rel(L, x): return x - L.s
 
 def cues():
-    H = [LN[f's0_hook_{i:02d}'] for i in range(8)]
-    L = H[0]; P(L.s - 1.4, 'cairo_street', 'in'); SUPER(L.w(0) + .1, L.e + .8, 'القاهرة', '1011م')
-    L = H[1]; P(L.s, 'hakim_mosque', 'l'); P(L.w(5), 'dinar', 'in', size=620)
-    L = H[2]; KT(L.s - .2, [ln('لم يكن مجنونًا', rel(L, L.w(1)) + .2, sz=104), ln('كان يمثّل', rel(L, L.w(4)) + .2, c='r', sz=150)], rule=True)
-    L = H[3]; P(L.s, 'mokattam', 'r')
-    L = H[4]; bg(L.s, 'stat', dict(v=10, u='سنوات حبيسَ بيتٍ مُغلق', s='1011 — 1021'))
-    P(L.w(9) - .2, 'abbasid_ms', 'in')
-    L = H[5]; P(L.s, 'camera_box', 'in', size=780); P(L.w(4), 'ayscough', 'r'); P(L.w(6), 'eye_ms', 'in', size=880); P(L.w(15), 'haytham', 'in', size=900)
-    L = H[6]
-    KT(L.s - .1, [ln('لماذا تظاهر', .25, sz=84, w=600), ln('بالجنون؟', .6, c='r', sz=124)])
-    KT(L.w(3) - .1, [ln('ماذا رأى في', .25, sz=84, w=600), ln('الغرفة المظلمة؟', .6, c='r', sz=124)])
-    KT(L.w(10) - .1, [ln('كيف تحقّق حلمه', .25, sz=84, w=600), ln('بعد تسعة قرون؟', .6, c='r', sz=124)])
-    L = H[7]; P(L.s, 'haytham', dict(s0=1.0, s1=1.08), size=900); LOWER(L.w(1) - .1, L.e + 1.0, 'الحسن بن الهيثم', 'عالم البصريات · 965 – 1040م')
-
+    H = [LN[f's0_hook_{i:02d}'] for i in range(7)]
+    L = H[0]; P(0.0, 'haytham', dict(s0=1.45, s1=1.62, y0=16, y1=18), size=900)
+    KT(L.w(2) - .05, [ln('تظاهرَ بالجنون', .05, c='r', sz=150, an='mask')])
+    bg(L.w(4) - .05, 'stat', dict(v=10, u='سنوات', s='1011 — 1021', count=.7))
+    L = H[1]; KT(L.s - .05, [ln('لم يكن مجنونًا', .05, sz=128, an='mask')])
+    P(L.w(3) - .05, 'hakim_mosque', 'l'); P(L.w(6) - .05, 'dinar', dict(s0=1.0, s1=1.08), size=620); P(L.w(10) - .05, 'zuwayla', 'in')
+    L = H[2]; P(L.s - .05, 'cairo_street', dict(s0=1.2, s1=1.3, x0=-3, x1=-1)); P(L.w(3) - .05, 'ayscough', 'r'); P(L.w(6) - .05, 'camera_box', 'in', size=760)
+    L = H[3]; P(L.s - .05, 'kircher', 'in', size=880); FLASH.append(L.w(2) + .05); P(L.w(2) + .05, 'encyc_camera', 'in', size=860); P(L.w(6) - .05, 'haytham', dict(s0=1.0, s1=1.06), size=900)
+    L = H[4]; P(L.s - .05, 'ptolemy', 'in', size=900); P(L.w(9) - .05, 'ptolemy_eng', 'out', size=900)
+    KT(L.w(15) - .05, [ln('كانوا', .0, c='g', sz=80, w=600, an='mask'), ln('مخطئين', .12, c='r', sz=170, an='mask')])
+    L = H[5]; P(L.s - .05, 'philae_frere', 'in'); P(L.w(4) - .05, 'elephantine', 'l'); P(L.w(6) - .05, 'nasser_sat', 'in'); SUPER(L.w(7), L.e + .5, 'بعد تسعة قرون', 'أسوان')
+    L = H[6]; KT(L.s - .05, [ln('ليست أسطورة', .05, c='g', sz=84, w=600, an='mask')]); P(L.w(3) - .05, 'haytham', dict(s0=1.12, s1=1.0), size=900)
     C = [LN[f's1_basra_{i:02d}'] for i in range(9)]
     L = C[0]; bg(L.s, 'map', dict(hi=['Iraq'], tigris=1, cam=[[0, 2500, 1250, 1500], [3.5, 2580, 1330, 760]],
              cities=[dict(k='basra', t=.6, big=1, sz=1.2), dict(k='baghdad', t=1.4)], regions=[dict(tx='العراق', x=2480, y=1140, t=.8)]), fo=.6)
@@ -241,13 +239,35 @@ cues()
 # ---------------- assemble ----------------
 clips = []
 BG.sort(key=lambda x: x[0])
-XF = .7
-for i, (s, spec) in enumerate(BG):
+HOOK_END = CARDS[0][1]
+FRAMES_BLEED = [dict(s0=1.0, s1=1.07), dict(s0=1.32, s1=1.4, x0=-7, x1=-5, y0=-4, y1=-3), dict(s0=1.26, s1=1.34, x0=7, x1=5, y0=5, y1=3), dict(s0=1.36, s1=1.44, x0=2, x1=0, y0=-7, y1=-6)]
+FRAMES_DOC = [None, dict(s0=1.55, s1=1.66, x0=-6, x1=-4, y0=-9, y1=-7), dict(s0=1.45, s1=1.55, x0=7, x1=5, y0=8, y1=6), dict(s0=1.6, s1=1.7, x0=0, x1=2, y0=12, y1=10)]
+expanded = []
+for i, (st, spec) in enumerate(BG):
+    nxt = BG[i + 1][0] if i + 1 < len(BG) else END_CARD_S + 1.0
+    d = nxt - st
+    if spec['type'] == 'photo' and d > 4.6:
+        n = min(4, int(d / 3.4 + .5))
+        for k in range(n):
+            sp = json.loads(json.dumps(spec))
+            if k > 0:
+                fr = (FRAMES_DOC if sp['p'].get('doc') else FRAMES_BLEED)[k % 4]
+                if fr: sp['p']['kb'] = fr
+                sp['p'].pop('cap', None)
+            expanded.append((st + d * k / n, sp))
+    else:
+        expanded.append((st, spec))
+BG = expanded
+CUTS = []
+XF = .3
+for i, (s_, spec) in enumerate(BG):
     e = BG[i + 1][0] + XF if i + 1 < len(BG) else END_CARD_S + 1.5
-    c = dict(id=f'bg{i:03d}', s=round(s, 3), e=round(e, 3), z=10 + i, **spec)
-    if c['type'] in ('photo',): c.setdefault('fi', .7); c.setdefault('fo', 0)
-    if i == 0: c['fi'] = 1.2
-    clips.append(c)
+    c = dict(id=f'bg{i:03d}', s=round(s_, 3), e=round(e, 3), z=10 + i, **spec)
+    if c['type'] == 'photo': c.setdefault('fi', .3); c['punch'] = 1
+    if i == 0: c['fi'] = 0
+    clips.append(c); CUTS.append(round(s_, 3))
+for j, ft in enumerate(FLASH):
+    clips.append(dict(id=f'fl{j}', type='flash', s=round(ft, 3), e=round(ft + .45, 3), z=980, p=dict(color='#ffffff', peak=.95)))
 for i, c in enumerate(OV): c['id'] = f'ov{i:03d}'; c['s'] = round(c['s'], 3); c['e'] = round(c['e'], 3); clips.append(c)
 for i, cd in enumerate(CARDS):
     if cd[0] == 'title':
@@ -262,7 +282,7 @@ for cd in sorted(CARDS, key=lambda x: x[1]):
 bugr.append([cur, END_CARD_S + .3])
 TL = dict(duration=round(DURATION, 3), bug=bugr, bugLight=[], clips=clips)
 open('build/timeline.js', 'w').write('window.TL=' + json.dumps(TL, ensure_ascii=False) + ';')
-json.dump(dict(lines=[dict(id=l.id, s=round(l.s, 3), d=round(l.d, 3), trim0=l.L['trim0'], src=l.L['src'], text=l.L['text'],
+json.dump(dict(cuts=CUTS, flashes=FLASH, hook_end=HOOK_END, lines=[dict(id=l.id, s=round(l.s, 3), d=round(l.d, 3), trim0=l.L['trim0'], src=l.L['src'], text=l.L['text'],
                            words=[dict(t=round(l.s + w['t'] - l.L['trim0'], 3), d=w['d'], w=w['w']) for w in l.L['words']]) for l in SCHED],
                cards=CARDS, duration=DURATION, end_card=END_CARD_S), open('build/schedule.json', 'w'), ensure_ascii=False, indent=1)
 missing = sorted({k for k in ASSETS} - AV)

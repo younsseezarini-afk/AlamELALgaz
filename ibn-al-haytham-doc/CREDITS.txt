@@ -1,7 +1,7 @@
 CREDITS — سجين الضوء: ابن الهيثم
 
 MUSIC
-Kevin MacLeod (incompetech.com) — Unanswered Questions; Impact Prelude; Ibn Al-Noor; Lightless Dawn; Ossuary 6 - Air; Impact Lento; Dreams Become Real; Despair and Triumph
+Kevin MacLeod (incompetech.com) — Ibn Al-Noor; Impact Prelude; Desert City; Unanswered Questions; Heart of Nowhere; Crossing the Chasm; Impact Andante; Echoes of Time v2; Despair and Triumph
 Licensed under Creative Commons: By Attribution 4.0 License — http://creativecommons.org/licenses/by/4.0/
 
 ARCHIVAL IMAGES (Wikimedia Commons — public domain or CC licenses; see each file page for author and license)
@@ -44,4 +44,4 @@ MAP DATA
 Natural Earth via world-atlas (public domain)
 
 NARRATION
-Arabic neural voice (ar-SA-HamedNeural), Microsoft
+Arabic neural voice (ar-KW-FahedNeural), Microsoft

@@ -31,10 +31,14 @@ act = vo[:, 0] ** 2
 vo *= db(-18) / np.sqrt(np.mean(act[act > 1e-6]))     # speech RMS ≈ -18 dBFS
 
 # ---------- music bed ----------
-SECT = [('Unanswered_Questions', 0.0, 76.0, 0), ('Impact_Prelude', 73.0, 89.0, 0), ('Ibn_Al-Noor', 86.0, 293.0, 0),
-        ('Lightless_Dawn', 290.0, 438.0, 0), ('Ossuary_6_-_Air', 435.0, 582.0, 0), ('Impact_Lento', 579.0, 681.0, 0),
-        ('Dreams_Become_Real', 678.0, 779.0, 30), ('Despair_and_Triumph', 776.0, DUR, 150)]
-XF = 3.0
+cards = sorted(S['cards'], key=lambda c: c[1])
+T = cards[0][1]; CH = [c[1] for c in cards[1:]]
+dam = [w['t'] for l in S['lines'] if l['id'] == 's7_ending_02' for w in l['words'] if 'السد' in w['w']][0]
+names = ['Desert_City', 'Unanswered_Questions', 'Heart_of_Nowhere', 'Crossing_the_Chasm', 'Impact_Andante', 'Echoes_of_Time_v2']
+SECT = [('Ibn_Al-Noor', 0.0, T + .6, 0), ('Impact_Prelude', T - .4, CH[0] + 1.2, 0)]
+for k, nm in enumerate(names): SECT.append((nm, CH[k] + .3, CH[k + 1] + 1.0, 0))
+SECT.append(('Despair_and_Triumph', CH[6] + .3, DUR, max(0, 174 - (dam - CH[6] - .3))))
+XF = 2.0
 mus = np.zeros((N, 2), np.float32)
 for name, s, e, off in SECT:
     a = load(f'music/km/{name}.mp3', off, e - s + XF)
@@ -51,7 +55,8 @@ for l in S['lines']:
     for w in l['words']:
         a, b = int((w['t'] - .6) * SR), int((w['t'] + w['d'] + .6) * SR)
         speech[max(a, 0):b] = True
-target = np.where(speech, db(-12), db(0)).astype(np.float32)
+target = np.where(speech, db(-10), db(0)).astype(np.float32)
+target[:int(S['hook_end'] * SR)] = np.where(speech[:int(S['hook_end'] * SR)], db(-7.5), db(0))
 for c in S['cards']: target[int(c[1] * SR):int(c[2] * SR)] = db(2.5)
 target[int(S['end_card'] * SR):] = np.where(speech[int(S['end_card'] * SR):], db(-10), db(1))
 g = np.empty_like(target); cur = target[0]
@@ -70,7 +75,9 @@ fo = int(4 * SR); mus[-fo:] *= np.linspace(1, 0, fo)[:, None]
 rng = np.random.default_rng(3)
 sfx = np.zeros((N, 2), np.float32)
 def place(x, at, gain_db):
-    i = int(at * SR); n = min(len(x), N - i)
+    i = int(at * SR)
+    if i < 0: x = x[-i:]; i = 0
+    n = min(len(x), N - i)
     if n > 0: sfx[i:i + n] += x[:n] * db(gain_db)
 def lp(x, a):  # one-pole lowpass (scalar or per-sample coefficient)
     y = np.empty_like(x); acc = 0.0
@@ -101,14 +108,29 @@ def riser(d=3.0):
     x = x / np.abs(x).max() + tone
     return np.stack([x, x], 1).astype(np.float32)
 B, Wh, Ri = boom(), whoosh(), riser()
+def click():
+    n = int(.12 * SR); tt = np.arange(n) / SR
+    nz = rng.standard_normal(n).astype(np.float32)
+    x = (nz - lp(nz, .2)) * (np.exp(-tt * 90) + .6 * np.exp(-np.maximum(tt - .045, 0) * 120) * (tt > .045))
+    x /= np.abs(x).max(); return np.stack([x, x], 1).astype(np.float32)
+Cl = click()
+place(B, 0.0, -12)                                   # hit on the very first frame
 for c in S['cards']:
     if c[0] == 'title':
-        place(Ri, c[1] - 2.6, -20); place(B, c[1] + .75, -9)
+        place(Ri, c[1] - 2.6, -21); place(B, c[1] + .55, -9)
     else:
-        place(Wh, c[1] - .55, -22); place(B, c[1] + .55, -17)
+        place(Wh, c[1] - .5, -21); place(B, c[1] + .35, -16)
+last = -9
+cardt = [c[1] for c in S['cards']]
+for ct in S['cuts']:
+    if ct - last < 1.1 or any(abs(ct - x) < 1.0 for x in cardt): continue
+    place(Wh, ct - .55, -21 if ct < S['hook_end'] else -31); last = ct
+for ft in S['flashes']: place(Cl, ft - .02, -12)
 L = {l['id']: l for l in S['lines']}
-for lid, g_ in [('s0_hook_02', -20), ('s3_madness_04', -14), ('s3_madness_14', -15), ('s7_ending_04', -19)]:
-    place(B, L[lid]['s'] - .05, g_)
+def wt(lid, n): return L[lid]['words'][n]['t']
+for at, g_ in [(wt('s0_hook_00', 2), -15), (wt('s0_hook_01', 0), -19), (wt('s0_hook_04', 15), -15), (wt('s0_hook_06', 0), -18),
+               (L['s3_madness_04']['s'], -14), (L['s3_madness_14']['s'], -15), (L['s7_ending_04']['s'], -19)]:
+    place(B, at - .05, g_)
 place(B, S['end_card'] + .35, -16)
 
 mix = vo + mus + sfx

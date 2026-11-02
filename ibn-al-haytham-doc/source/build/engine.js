@@ -41,13 +41,13 @@
     return im;
   }
   function maskLine(parent, cls, html) { const m = h('div', 'mask ' + (cls || ''), parent); return h('span', '', m, html); }
-  function animMask(sp, lt, at, dur = .9) { const q = outExpo(prog(lt, at, dur)); sp.style.transform = `translateY(${(1 - q) * 105}%)`; }
+  function animMask(sp, lt, at, dur = .7) { const q = outExpo(prog(lt, at, dur)); sp.style.transform = `translateY(${(1 - q) * 105}%)`; }
   function words(parent, text) {
     const out = [];
     text.split(/\s+/).filter(Boolean).forEach((w, i, a) => { out.push(h('span', 'wd', parent, w)); if (i < a.length - 1) parent.appendChild(document.createTextNode(' ')); });
     return out;
   }
-  function animWords(ws, lt, at, stagger = .07, dur = .8, dy = 22) {
+  function animWords(ws, lt, at, stagger = .05, dur = .55, dy = 26) {
     ws.forEach((w, i) => { const q = outQuart(prog(lt, at + i * stagger, dur)); w.style.opacity = q; w.style.transform = `translateY(${(1 - q) * dy}px)`; });
   }
   const fadeInOut = (lt, dur, fi, fo) => (fi ? inOutSine(prog(lt, 0, fi)) : 1) * (fo ? 1 - inOutSine(prog(lt, dur - fo, fo)) : 1);
@@ -80,7 +80,7 @@
     },
     update(el, c, lt, dur) {
       const p = c.p, k = p.kb || {}, u = clamp(lt / dur);
-      const sc = lerp(k.s0 ?? 1.0, k.s1 ?? 1.06, u);
+      const sc = lerp(k.s0 ?? 1.0, k.s1 ?? 1.06, u) * (c.punch ? 1 + .075 * (1 - outExpo(prog(lt, 0, .6))) : 1);
       const x = lerp(k.x0 ?? 0, k.x1 ?? 0, u), y = lerp(k.y0 ?? 0, k.y1 ?? 0, u);
       if (p.doc) el._w.style.transform = `translate(-50%,-50%) translate(${x}%,${y}%) scale(${sc}) rotate(${p.rot || 0}deg)`;
       else el._img.style.transform = `translate(${x}%,${y}%) scale(${sc})`;
@@ -97,6 +97,12 @@
         }
       }
     }
+  };
+
+  // ---------- flash (shutter / hit) ----------
+  R.flash = {
+    create(c) { const el = h('div', 'clip'); el.style.background = c.p.color || '#fff'; return el; },
+    update(el, c, lt, dur) { el.style.opacity = (c.p.peak ?? .9) * Math.pow(1 - clamp(lt / dur), 2.4); }
   };
 
   // ---------- plain background ----------
@@ -218,7 +224,7 @@
     update(el, c, lt, dur) {
       const p = c.p;
       if (el._top == null) { el._top = (p.y ?? 540) - el._box.offsetHeight / 2; el._box.style.top = el._top + 'px'; }
-      el.style.opacity = fadeInOut(lt, dur, p.fi ?? (p.bg ? .5 : 0), p.fo ?? .5);
+      el.style.opacity = fadeInOut(lt, dur, p.fi ?? (p.bg ? .22 : 0), p.fo ?? .3);
       if (el._rule) el._rule.style.transform = `scaleX(${inOutCubic(prog(lt, .15, .6))})`;
       p.lines.forEach((L, i) => {
         const o = el._ls[i], at = L.at ?? (.35 + i * .45);
@@ -265,12 +271,12 @@
     },
     update(el, c, lt, dur) {
       const p = c.p;
-      el.style.opacity = fadeInOut(lt, dur, .5, .5);
-      const q = outExpo(prog(lt, .3, p.count ?? 1.6));
+      el.style.opacity = fadeInOut(lt, dur, .22, .3);
+      const q = outExpo(prog(lt, .1, p.count ?? 1.2));
       el._v.textContent = (p.pre || '') + Math.round(lerp(p.from ?? 0, p.v, q)).toLocaleString('en-US') + (p.post || '');
-      el._v.style.opacity = outQuart(prog(lt, .2, .5));
-      animMask(el._u, lt, .9);
-      el._s.style.opacity = outQuart(prog(lt, 1.3, .8));
+      el._v.style.opacity = outQuart(prog(lt, .05, .3));
+      animMask(el._u, lt, .35);
+      el._s.style.opacity = outQuart(prog(lt, .6, .5));
     }
   };
 
